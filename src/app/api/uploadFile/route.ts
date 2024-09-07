@@ -1,7 +1,7 @@
 // app/api/saveParticipant/route.ts
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { google } from "googleapis";
+import { google, drive_v3 } from "googleapis";
 import { authenticateGoogle } from "@/utils/googleAuth"; // Importando da nova localização
 import mime from "mime";
 import { Readable } from "stream";
@@ -9,7 +9,12 @@ import { Readable } from "stream";
 const prisma = new PrismaClient();
 
 // Função para buscar ou criar pasta no Google Drive
-const getOrCreateFolder = async (drive, folderName, parentFolderId) => {
+const getOrCreateFolder = async (
+    drive: drive_v3.Drive,
+    folderName: string,
+    parentFolderId?: string
+) => {
+    
     const response = await drive.files.list({
         q: `'${parentFolderId}' in parents and name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
         fields: "files(id, name)",
@@ -17,7 +22,7 @@ const getOrCreateFolder = async (drive, folderName, parentFolderId) => {
     });
     
     if (response.data.files && response.data.files.length > 0) {
-        return response.data.files[0].id;
+        return response.data.files[0].id || undefined;
     }
     
     const folder = await drive.files.create({
@@ -30,7 +35,7 @@ const getOrCreateFolder = async (drive, folderName, parentFolderId) => {
         supportsAllDrives: true,
     });
     
-    return folder.data.id;
+    return folder.data.id || undefined;
 };
 
 // Função para criar a estrutura de pastas no Google Drive com base na data
