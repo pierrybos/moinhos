@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { google } from "googleapis";
-import { authenticateGoogle, uploadFolderToDrive } from "@/utils/googleAuth"; // Importando da nova localização
+import { authenticateGoogle } from "@/utils/googleAuth"; // Importando da nova localização
 import mime from "mime";
 import { Readable } from "stream";
 
