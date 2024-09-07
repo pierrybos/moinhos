@@ -1,147 +1,66 @@
-// app/api/saveParticipant/route.ts
+// src/app/api/uploadFile/route.ts (Exemplo ajustado)
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { google, drive_v3 } from "googleapis";
-import { authenticateGoogle } from "@/utils/googleAuth"; // Importando da nova localização
-import mime from "mime";
+import { authenticateGoogle } from "@/utils/googleAuth";
 
-const prisma = new PrismaClient();
-
-// Função para buscar ou criar pasta no Google Drive
-const getOrCreateFolder = async (
+// Função para criar ou obter uma pasta no Google Drive
+const createOrGetFolder = async (
     drive: drive_v3.Drive,
-    folderName: string,
-    parentFolderId?: string
-) => {
-    
-    const response = await drive.files.list({
-        q: `'${parentFolderId}' in parents and name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    parentId: string,
+    folderName: string
+): Promise<string> => {
+    const folderExists = await drive.files.list({
+        q: `'${parentId}' in parents and name='${folderName}' and mimeType='application/vnd.google-apps.folder'`,
         fields: "files(id, name)",
-        spaces: "drive",
-    });
-    
-    if (response.data.files && response.data.files.length > 0) {
-        return response.data.files[0].id || undefined;
-    }
-    
-    const folder = await drive.files.create({
-        requestBody: {
-            name: folderName,
-            mimeType: "application/vnd.google-apps.folder",
-            parents: [parentFolderId],
-        },
-        fields: "id",
         supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
     });
     
-    return folder.data.id || undefined;
+    if (folderExists.data.files && folderExists.data.files.length > 0) {
+        return folderExists.data.files[0].id!;
+    } else {
+        const folder = await drive.files.create({
+            requestBody: {
+                name: folderName,
+                mimeType: "application/vnd.google-apps.folder",
+                parents: [parentId], // Garantir que parentId é sempre uma string
+            },
+            fields: "id",
+            supportsAllDrives: true,
+        });
+        
+        // Certifique-se de que o id é sempre retornado como string
+        if (!folder.data.id) {
+            throw new Error("Falha ao criar a pasta.");
+        }
+        
+        return folder.data.id;
+    }
 };
 
-// Função para criar a estrutura de pastas no Google Drive com base na data
-const createFolderStructure = async (drive: drive_v3.Drive, date: string) => {
-    
-    const [year, month, day] = date.split("-");
-    let parentFolderId = process.env.NEXT_PUBLIC_SHARED_DRIVE_ID;
-    
-    parentFolderId = await getOrCreateFolder(drive, year, parentFolderId);
-    parentFolderId = await getOrCreateFolder(drive, month, parentFolderId);
-    parentFolderId = await getOrCreateFolder(drive, day, parentFolderId);
-    
-    return parentFolderId;
-};
-
-// Função para upload de arquivos para o Google Drive
-const uploadFileToDrive = async (folderId: string, file: File) => {
-    
-    const auth = authenticateGoogle();
-    const drive = google.drive({ version: "v3", auth });
-    
-    const mimeType = mime.getType(file.name);
-    
-    const fileMetadata = {
-        name: file.name,
-        parents: [folderId],
-        mimeType: mimeType,
-    };
-    
-    const fileBuffer = file.stream();
-    const response = await drive.files.create({
-        requestBody: fileMetadata,
-        media: {
-            mimeType: mimeType!,
-            body: fileBuffer, // Fixed: No need to convert to Readable.from
-        },
-        fields: "id",
-        supportsAllDrives: true,
-    });
-    
-    
-    if (!response.data.id) {
-        console.error("Erro ao criar o arquivo: ID não retornado.");
-        throw new Error("Erro ao criar o arquivo no Google Drive.");
-    }
-    
-    const fileLink = await drive.files.get({
-        fileId: response.data.id,
-        fields: "webViewLink",
-        supportsAllDrives: true,
-    });
-    
-    if (!fileLink.data.webViewLink) {
-        console.error("Erro ao obter o link do arquivo:", fileLink.data);
-        throw new Error("Erro ao obter o link do arquivo.");
-    }
-    
-    return fileLink.data;
-};
-
-// Manipulador de requisições POST
 export async function POST(req: Request) {
     try {
-        const data = await req.formData();
-        const name = data.get("participantName") as string;
-        const group = data.get("churchGroupState") as string;
-        const participationDate = data.get("participationDate") as string;
-        const programPart = data.get("programPart") as string;
-        const observations = data.get("observations") as string;
-        const files = data.getAll("files") as File[];
+        const data = await req.json();
+        const { folderName, parentFolderId } = data;
         
-        // Autenticação do Google Drive
+        if (!folderName || !parentFolderId) {
+            return NextResponse.json(
+                { error: "Nome da pasta e ID da pasta pai são obrigatórios." },
+                { status: 400 }
+            );
+        }
+        
         const auth = authenticateGoogle();
         const drive = google.drive({ version: "v3", auth });
         
-        // Cria ou reutiliza a estrutura de pastas com base na data fornecida
-        const folderId = await createFolderStructure(drive, participationDate);
+        // Chama a função para criar ou obter a pasta
+        const folderId = await createOrGetFolder(drive, parentFolderId, folderName);
         
-        // Salvar o participante no banco de dados com status "Pendente"
-        const participant = await prisma.participant.create({
-            data: {
-                name,
-                group,
-                participationDate: new Date(participationDate),
-                programPart,
-                observations,
-                status: "Pendente",
-            },
-        });
-        
-        // Salvar os arquivos e associar ao participante
-        for (const file of files) {
-            const driveLink = await uploadFileToDrive(folderId, file);
-            await prisma.file.create({
-                data: {
-                    filename: file.name,
-                    driveLink: driveLink.webViewLink,
-                    participantId: participant.id,
-                },
-            });
-        }
-        
-        return NextResponse.json({ message: "Dados salvos com sucesso!" });
+        return NextResponse.json({ folderId });
     } catch (error) {
-        console.error("Erro ao salvar os dados:", error);
+        console.error("Erro ao criar a pasta:", error);
         return NextResponse.json(
-            { error: "Erro ao salvar os dados." },
+            { error: "Erro ao criar a pasta." },
             { status: 500 }
         );
     }
