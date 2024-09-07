@@ -39,7 +39,8 @@ const getOrCreateFolder = async (
 };
 
 // Função para criar a estrutura de pastas no Google Drive com base na data
-const createFolderStructure = async (drive, date) => {
+const createFolderStructure = async (drive: drive_v3.Drive, date: string) => {
+    
     const [year, month, day] = date.split("-");
     let parentFolderId = process.env.NEXT_PUBLIC_SHARED_DRIVE_ID;
     
@@ -51,7 +52,8 @@ const createFolderStructure = async (drive, date) => {
 };
 
 // Função para upload de arquivos para o Google Drive
-const uploadFileToDrive = async (folderId, file) => {
+const uploadFileToDrive = async (folderId: string, file: File) => {
+    
     const auth = authenticateGoogle();
     const drive = google.drive({ version: "v3", auth });
     
@@ -64,16 +66,16 @@ const uploadFileToDrive = async (folderId, file) => {
     };
     
     const fileBuffer = file.stream();
-    
     const response = await drive.files.create({
         requestBody: fileMetadata,
         media: {
             mimeType: mimeType!,
-            body: Readable.from(fileBuffer),
+            body: fileBuffer, // Fixed: No need to convert to Readable.from
         },
         fields: "id",
         supportsAllDrives: true,
     });
+    
     
     if (!response.data.id) {
         console.error("Erro ao criar o arquivo: ID não retornado.");
