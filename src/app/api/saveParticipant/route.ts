@@ -4,7 +4,8 @@ import { PrismaClient } from "@prisma/client";
 import { google, drive_v3 } from "googleapis"; // Importando o tipo drive_v3
 import { Readable } from "stream";
 import mime from "mime"; // Importando mime para identificar o tipo dos arquivos
-"@/src/utils/googleAuth";
+import { authenticateGoogle } from "@/utils/googleAuth"; // Importando da nova localização
+
 const prisma = new PrismaClient();
 
 // Função para criar ou obter uma pasta no Google Drive
