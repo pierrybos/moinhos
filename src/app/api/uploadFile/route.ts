@@ -4,7 +4,6 @@ import { PrismaClient } from "@prisma/client";
 import { google, drive_v3 } from "googleapis";
 import { authenticateGoogle } from "@/utils/googleAuth"; // Importando da nova localização
 import mime from "mime";
-import { Readable } from "stream";
 
 const prisma = new PrismaClient();
 
