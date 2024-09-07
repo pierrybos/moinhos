@@ -1,7 +1,7 @@
 // app/api/saveParticipant/route.ts
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { google } from "googleapis";
+import { google, drive_v3 } from "googleapis"; // Importando o tipo drive_v3
 import { Readable } from "stream";
 import mime from "mime"; // Importando mime para identificar o tipo dos arquivos
 import { authenticateGoogle } from "@/app/api/createFolder/route"; // Ajuste para sua rota de autenticação Google
@@ -10,10 +10,10 @@ const prisma = new PrismaClient();
 
 // Função para criar ou obter uma pasta no Google Drive
 const createOrGetFolder = async (
-    drive: any,
+    drive: drive_v3.Drive, // Especificando o tipo correto para o Google Drive
     parentId: string,
     folderName: string
-) => {
+): Promise<string> => {
     const folderExists = await drive.files.list({
         q: `'${parentId}' in parents and name='${folderName}' and mimeType='application/vnd.google-apps.folder'`,
         fields: "files(id, name)",
@@ -22,7 +22,7 @@ const createOrGetFolder = async (
     });
     
     if (folderExists.data.files && folderExists.data.files.length > 0) {
-        return folderExists.data.files[0].id;
+        return folderExists.data.files[0].id!;
     } else {
         const folder = await drive.files.create({
             requestBody: {
@@ -34,12 +34,16 @@ const createOrGetFolder = async (
             supportsAllDrives: true,
         });
         
-        return folder.data.id;
+        return folder.data.id!;
     }
 };
 
 // Função para upload de arquivos para o Google Drive
-const uploadFileToDrive = async (drive: any, file: File, folderId: string) => {
+const uploadFileToDrive = async (
+    drive: drive_v3.Drive, // Especificando o tipo correto para o Google Drive
+    file: File,
+    folderId: string
+): Promise<drive_v3.Schema$File> => {
     const fileMetadata = {
         name: file.name,
         parents: [folderId],
@@ -113,7 +117,7 @@ export async function POST(req: Request) {
             await prisma.file.create({
                 data: {
                     filename: file.name,
-                    driveLink: driveLink.webViewLink,
+                    driveLink: driveLink.webViewLink!,
                     participantId: participant.id,
                 },
             });

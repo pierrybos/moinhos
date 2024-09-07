@@ -27,10 +27,6 @@ export const authOptions = {
             
             return session;
         },
-        async signIn({ user, account, profile }) {
-            // Outras validações podem ser adicionadas aqui se necessário
-            return true;
-        },
     },
 };
 
