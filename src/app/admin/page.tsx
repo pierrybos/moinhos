@@ -1,4 +1,4 @@
-// app/admin/page.tsx
+// src/app/admin/page.tsx
 "use client";
 
 import { useSession, signIn, signOut } from "next-auth/react";
@@ -49,7 +49,8 @@ const AdminPanel = () => {
 
   // Carrega os dados dos participantes quando o usuário é autenticado e tem permissões de admin
   useEffect(() => {
-    if (session && session.user.isAdmin) {
+    if (session?.user && session.user.isAdmin) {
+      // Verifica se session e session.user não são undefined
       const fetchParticipants = async () => {
         const res = await fetch("/api/getParticipants");
         const data = await res.json();
@@ -73,11 +74,13 @@ const AdminPanel = () => {
     );
   }
 
-  if (!session.user.isAdmin) {
+  if (!session.user?.isAdmin) {
+    // Verifica se session.user é undefined antes de checar isAdmin
     return (
       <Container>
         <Typography variant="h6">
           Acesso Negado. Você não tem permissão para acessar esta página.
+          {JSON.stringify(session.user)}
         </Typography>
         <Button onClick={() => signOut()}>Sair</Button>
       </Container>
