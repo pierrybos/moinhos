@@ -5,7 +5,7 @@ import React, { useState } from "react";
 const driveId = process.env.NEXT_PUBLIC_SHARED_DRIVE_ID;
 
 const Page = () => {
-  const [folderId, setFolderId] = useState(
+  const [folderId, setFolderId] = useState<string | undefined>(
     process.env.NEXT_PUBLIC_SHARED_DRIVE_ID
   );
   const [folderName, setFolderName] = useState("");
@@ -13,7 +13,7 @@ const Page = () => {
 
   const createFolder = async () => {
     const body = {
-      folderId: process.env.NEXT_PUBLIC_SHARED_DRIVE_ID,
+      folderId: driveId,
       folderName,
     };
 
@@ -35,11 +35,16 @@ const Page = () => {
   const uploadFile = async () => {
     if (!file) return;
 
-    const formData = new FormData();
+    // Verifica se o folderId é válido antes de usar
+    if (!folderId) {
+      alert("O ID da pasta não está definido.");
+      return;
+    }
 
-    formData.append("folderId", folderId);
+    const formData = new FormData();
+    formData.append("folderId", folderId); // Garante que folderId é sempre string
     formData.append("file", file);
-    formData.append("driveId", driveId!);
+    formData.append("driveId", driveId || "");
 
     const res = await fetch("/api/uploadFile", {
       method: "POST",
@@ -78,7 +83,7 @@ const Page = () => {
         <input
           type="text"
           placeholder="Parent Folder ID"
-          value={folderId}
+          value={folderId || ""}
           onChange={(e) => setFolderId(e.target.value)}
         />
 
