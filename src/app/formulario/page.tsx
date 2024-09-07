@@ -31,7 +31,7 @@ const FormPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
+    if (e.target.files && e.target.files.length > 0) {
       // Acumula os arquivos selecionados
       setFiles((prevFiles) => [...prevFiles, ...Array.from(e.target.files)]);
     }
