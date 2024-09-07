@@ -1,7 +1,6 @@
 import { google } from "googleapis";
 import { NextResponse } from "next/server";
-import { authenticateGoogle, uploadFolderToDrive } from "@/utils/googleAuth"; // Importando da nova localização
-
+"@/src/utils/googleAuth";
 
 const privateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
 const clientEmail = process.env.NEXT_PUBLIC_CLIENT_EMAIL;
