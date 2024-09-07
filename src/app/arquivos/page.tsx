@@ -23,6 +23,7 @@ type Participant = {
   group: string;
   participationDate: string;
   programPart: string;
+  observations: string;
   status: string;
   files: {
     id: number;
