@@ -32,6 +32,9 @@ type Participant = {
   }[];
 };
 
+export const revalidate = 60;
+export const dynamicParams = true; // or false, to 404 on unknown paths
+
 const ViewUploads = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
 

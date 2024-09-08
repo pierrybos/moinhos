@@ -1,7 +1,10 @@
+// layout.tsx
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import SessionWrapper from "./components/sessionWrapper"; // Importa o SessionWrapper para envolver o conteúdo
+import SessionWrapper from "./components/sessionWrapper";
+import { ThemeContextProvider } from "./components/themeContext"; // Importa o provedor de contexto do tema
+import Navbar from "./components/Navbar"; // Importa a Navbar
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -21,15 +24,20 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SessionWrapper>{children}</SessionWrapper>
+        <ThemeContextProvider>
+          <SessionWrapper>
+            <Navbar />
+            {children}
+          </SessionWrapper>
+        </ThemeContextProvider>
       </body>
     </html>
   );

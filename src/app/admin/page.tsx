@@ -80,7 +80,6 @@ const AdminPanel = () => {
       <Container>
         <Typography variant="h6">
           Acesso Negado. Você não tem permissão para acessar esta página.
-          {JSON.stringify(session.user)}
         </Typography>
         <Button onClick={() => signOut()}>Sair</Button>
       </Container>
