@@ -1,8 +1,10 @@
 // utils/getAccessToken.ts
 import { google } from "googleapis";
 
+const googleDriveKeyJson = JSON.parse(process.env.GOOGLE_DRIVE_KEY_JSON || "{}");
+
 const auth = new google.auth.GoogleAuth({
-  keyFile: "../private/key.json", // ajuste o caminho conforme necessário
+  credentials: googleDriveKeyJson, // Usa as credenciais diretamente do JSON parseado
   scopes: ["https://www.googleapis.com/auth/drive.file"],
 });
 
