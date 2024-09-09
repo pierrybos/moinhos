@@ -1,7 +1,6 @@
 // src/utils/googleDriveUpload.ts
 import { google } from 'googleapis';
 import { Readable } from 'stream';
-import path from 'path';
 
 const googleDriveKeyJson = JSON.parse(process.env.GOOGLE_DRIVE_KEY_JSON || "{}");
 
