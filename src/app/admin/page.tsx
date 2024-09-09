@@ -1,7 +1,7 @@
 // src/app/admin/page.tsx
 "use client";
 
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import React, { useEffect, useState } from "react";
 import {
   Container,
@@ -50,7 +50,7 @@ const formatPhoneNumber = (phone: string) => {
 };
 
 const AdminPanel = () => {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [statusUpdate, setStatusUpdate] = useState<{ [key: number]: string }>(
     {}

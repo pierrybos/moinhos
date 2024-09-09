@@ -7,7 +7,7 @@ const auth = new google.auth.GoogleAuth({
     scopes: ["https://www.googleapis.com/auth/drive.file"],
 });
 
-export async function GET(req: Request) {
+export async function GET() {
     try {
         const client = await auth.getClient();
         const tokenResponse = await client.getAccessToken();

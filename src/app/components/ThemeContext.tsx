@@ -2,7 +2,7 @@
 "use client"; // Coloque este arquivo em modo client-side
 
 import { createContext, useContext, useMemo, useState } from "react";
-import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
+import { ThemeProvider, CssBaseline } from "@mui/material";
 import { lightTheme, darkTheme } from "@/theme";
 
 // Definindo o contexto

@@ -1,6 +1,6 @@
 // app/admin/users/page.tsx
 "use client";
-import { useSession, signIn } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import React, { useEffect, useState } from "react";
 import {
   Container,
@@ -42,8 +42,7 @@ type Participant = {
 };
 
 const UserManagement = () => {
-  const { data: session, status } = useSession();
-  const [participants, setParticipants] = useState<Participant[]>([]);
+  const { data: session } = useSession();
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
@@ -56,19 +55,6 @@ const UserManagement = () => {
 
     fetchUsers();
   }, []);
-
-  useEffect(() => {
-    if (session?.user && session.user.isAdmin) {
-      // Verifica se session e session.user não são undefined
-      const fetchParticipants = async () => {
-        const res = await fetch("/api/getParticipants");
-        const data = await res.json();
-        setParticipants(data.participants);
-      };
-
-      fetchParticipants();
-    }
-  }, [session]);
 
   // Função para alterar o status de administrador do usuário
   const handleAdminToggle = async (userId: number, isAdmin: boolean) => {

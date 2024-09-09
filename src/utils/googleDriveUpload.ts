@@ -1,7 +1,6 @@
 // src/utils/googleDriveUpload.ts
 import { google } from 'googleapis';
 import { Readable } from 'stream';
-import { readFileSync } from 'fs';
 import path from 'path';
 
 // Função para autenticar e obter o cliente do Google Drive

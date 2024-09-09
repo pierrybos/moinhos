@@ -10,7 +10,6 @@ import {
   Box,
 } from "@mui/material";
 
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY; // Use a chave da API obtida no Google Cloud Console
 const ACCESS_TOKEN = process.env.NEXT_PUBLIC_ACCESS_TOKEN; // A chave de acesso OAuth 2.0 gerada para o aplicativo
 
 const FormPage = () => {
