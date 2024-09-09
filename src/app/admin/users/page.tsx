@@ -26,23 +26,7 @@ type User = {
   isAdmin: boolean;
 };
 
-type Participant = {
-  id: number;
-  name: string;
-  group: string;
-  participationDate: string;
-  programPart: string;
-  status: string;
-  observations: string;
-  files: {
-    id: number;
-    filename: string;
-    driveLink: string;
-  }[];
-};
-
 const UserManagement = () => {
-  const { data: session } = useSession();
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
