@@ -16,6 +16,7 @@ import {
   Switch,
   FormControlLabel,
 } from "@mui/material";
+import ProtectedRoute from "@/app/components/ProtectedRoute";
 
 // Tipo para os dados dos usuários
 type User = {
@@ -89,20 +90,8 @@ const UserManagement = () => {
     }
   };
 
-  if (status === "loading") return <p>Carregando...</p>;
-
-  // Proteção: se o usuário não estiver logado ou não for administrador, exibe acesso negado
-  if (!session) {
-    return (
-      <Container>
-        <Typography variant="h6">Você não está autenticado.</Typography>
-        <Button onClick={() => signIn()}>Faça login</Button>
-      </Container>
-    );
-  }
-
-  if (session.user?.isAdmin) {
-    return (
+  return (
+    <ProtectedRoute>
       <Container maxWidth="lg">
         <Typography variant="h4" component="h1" gutterBottom>
           Gerenciamento de Usuários
@@ -150,8 +139,8 @@ const UserManagement = () => {
           </Table>
         </TableContainer>
       </Container>
-    );
-  }
+    </ProtectedRoute>
+  );
 };
 
 export default UserManagement;

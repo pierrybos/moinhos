@@ -15,14 +15,23 @@ datasource db {
 }
 
 model Participant {
-  id              Int      @id @default(autoincrement())
-  name            String
-  group           String
+  id                Int        @id @default(autoincrement())
+  name              String
+  group             String
   participationDate DateTime
-  programPart     String
-  observations    String?
-  status          String   @default("Pendente")
-  files           File[]
+  programPart       String
+  observations      String?
+  status            String     @default("Pendente")
+  files             File[]
+  isActive          Boolean    @default(true) // Campo para exclusão lógica
+  phone             String?    // Novo campo para o telefone
+  isWhatsApp        Boolean    @default(false) // Novo campo para indicar se o telefone é WhatsApp
+}
+
+model ProgramPart {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  isActive Boolean @default(true) // Para permitir ativar/desativar opções
 }
 
 model File {

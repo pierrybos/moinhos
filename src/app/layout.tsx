@@ -5,6 +5,7 @@ import "./globals.css";
 import SessionWrapper from "./components/sessionWrapper";
 import { ThemeContextProvider } from "./components/themeContext"; // Importa o provedor de contexto do tema
 import Navbar from "./components/Navbar"; // Importa a Navbar
+import Head from "next/head";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
