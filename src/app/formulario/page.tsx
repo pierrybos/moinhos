@@ -22,7 +22,7 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import InputMask from "react-input-mask";
+import MaskedInput from "react-text-mask"; // Importa o MaskedInput
 
 const FormPage = () => {
   const [participantName, setParticipantName] = useState("");
@@ -38,7 +38,6 @@ const FormPage = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Verifica se o código está no client-side para evitar erros na build
     if (typeof window !== "undefined") {
       const fetchToken = async () => {
         try {
@@ -141,8 +140,7 @@ const FormPage = () => {
     setIsSubmitting(true);
 
     try {
-      const cleanedPhone = phone.replace(/\D/g, ""); // Remove todos os caracteres não numéricos
-      // Aqui, asseguramos que as chamadas à API ocorrem somente se o token de acesso está disponível
+      const cleanedPhone = phone.replace(/\D/g, "");
       if (!accessToken) {
         throw new Error("Token de acesso não está disponível.");
       }
@@ -214,8 +212,8 @@ const FormPage = () => {
     <Container
       maxWidth="sm"
       sx={{
-        backgroundColor: "background.paper", // Fundo que se adapta ao tema
-        color: "text.primary", // Cor do texto adaptada ao tema
+        backgroundColor: "background.paper",
+        color: "text.primary",
         padding: 2,
         borderRadius: 2,
       }}
@@ -224,7 +222,7 @@ const FormPage = () => {
         variant="h4"
         component="h1"
         gutterBottom
-        sx={{ color: "text.primary" }} // Ajuste da cor do texto com base no tema
+        sx={{ color: "text.primary" }}
       >
         Formulário de Participação
       </Typography>
@@ -284,27 +282,54 @@ const FormPage = () => {
           }}
         />
 
-        <InputMask
-          mask="(99) 99999-9999"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        >
-          <TextField
-            label="Telefone"
-            fullWidth
-            margin="normal"
-            required
+        <FormControl fullWidth margin="normal">
+          <InputLabel>Telefone</InputLabel>
+          <MaskedInput
+            mask={[
+              "(",
+              /[1-9]/,
+              /\d/,
+              ")",
+              " ",
+              /\d/,
+              /\d/,
+              /\d/,
+              /\d/,
+              /\d/,
+              "-",
+              /\d/,
+              /\d/,
+              /\d/,
+              /\d/,
+            ]}
             placeholder="(XX) XXXXX-XXXX"
-            sx={{
-              "& .MuiInputBase-input": {
-                color: "text.primary",
-              },
-              "& .MuiInputLabel-root": {
-                color: "text.secondary",
-              },
-            }}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            render={(ref, props) => (
+              <TextField
+                {...props}
+                inputRef={ref}
+                required
+                margin="normal"
+                fullWidth
+                error={!!phone && phone.length !== 15}
+                helperText={
+                  phone && phone.length !== 15
+                    ? "Insira um telefone válido com DDD."
+                    : ""
+                }
+                sx={{
+                  "& .MuiInputBase-input": {
+                    color: "text.primary",
+                  },
+                  "& .MuiInputLabel-root": {
+                    color: "text.secondary",
+                  },
+                }}
+              />
+            )}
           />
-        </InputMask>
+        </FormControl>
 
         <FormControlLabel
           control={
