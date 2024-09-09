@@ -164,7 +164,7 @@ const AdminPanel = () => {
                     {participant.phone
                       ? formatPhoneNumber(participant.phone)
                       : ""}{" "}
-                    {participant.isWhatsApp && (
+                    {participant.isWhatsApp && participant.phone && (
                       <IconButton
                         href={`https://wa.me/55${participant.phone.replace(
                           /\D/g,
