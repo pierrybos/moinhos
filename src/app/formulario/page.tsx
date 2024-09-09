@@ -22,14 +22,14 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import InputMask from "react-input-mask"; // Importando o InputMask
+import InputMask from "react-input-mask";
 
 const FormPage = () => {
   const [participantName, setParticipantName] = useState("");
   const [churchGroupState, setChurchGroupState] = useState("");
   const [participationDate, setParticipationDate] = useState("");
   const [programPart, setProgramPart] = useState("");
-  const [programParts, setProgramParts] = useState([]); // Estado para armazenar as opções de partes do programa
+  const [programParts, setProgramParts] = useState([]);
   const [phone, setPhone] = useState("");
   const [isWhatsApp, setIsWhatsApp] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
@@ -54,7 +54,6 @@ const FormPage = () => {
     };
     fetchToken();
 
-    // Carregar as partes do programa da API
     const fetchProgramParts = async () => {
       try {
         const response = await fetch("/api/program-parts");
@@ -177,7 +176,6 @@ const FormPage = () => {
         files: uploadedFiles, // Metadados dos arquivos já no Google Drive
       };
 
-      // Enviar os dados para a API para salvar no banco de dados
       await fetch("/api/saveParticipant", {
         method: "POST",
         headers: {
@@ -204,8 +202,21 @@ const FormPage = () => {
   };
 
   return (
-    <Container maxWidth="sm">
-      <Typography variant="h4" component="h1" gutterBottom>
+    <Container
+      maxWidth="sm"
+      sx={{
+        backgroundColor: "background.paper", // Fundo que se adapta ao tema
+        color: "text.primary", // Cor do texto adaptada ao tema
+        padding: 2,
+        borderRadius: 2,
+      }}
+    >
+      <Typography
+        variant="h4"
+        component="h1"
+        gutterBottom
+        sx={{ color: "text.primary" }} // Ajuste da cor do texto com base no tema
+      >
         Formulário de Participação
       </Typography>
       <form onSubmit={handleSubmit}>
@@ -216,6 +227,14 @@ const FormPage = () => {
           fullWidth
           required
           margin="normal"
+          sx={{
+            "& .MuiInputBase-input": {
+              color: "text.primary",
+            },
+            "& .MuiInputLabel-root": {
+              color: "text.secondary",
+            },
+          }}
         />
 
         <TextField
@@ -225,6 +244,14 @@ const FormPage = () => {
           fullWidth
           required
           margin="normal"
+          sx={{
+            "& .MuiInputBase-input": {
+              color: "text.primary",
+            },
+            "& .MuiInputLabel-root": {
+              color: "text.secondary",
+            },
+          }}
         />
 
         <TextField
@@ -237,6 +264,14 @@ const FormPage = () => {
           margin="normal"
           InputLabelProps={{
             shrink: true,
+          }}
+          sx={{
+            "& .MuiInputBase-input": {
+              color: "text.primary",
+            },
+            "& .MuiInputLabel-root": {
+              color: "text.secondary",
+            },
           }}
         />
 
@@ -252,6 +287,14 @@ const FormPage = () => {
               margin="normal"
               required
               placeholder="(XX) XXXXX-XXXX"
+              sx={{
+                "& .MuiInputBase-input": {
+                  color: "text.primary",
+                },
+                "& .MuiInputLabel-root": {
+                  color: "text.secondary",
+                },
+              }}
             />
           )}
         </InputMask>
@@ -265,9 +308,24 @@ const FormPage = () => {
             />
           }
           label="Este número é WhatsApp?"
+          sx={{
+            color: "text.primary",
+          }}
         />
 
-        <FormControl fullWidth required margin="normal">
+        <FormControl
+          fullWidth
+          required
+          margin="normal"
+          sx={{
+            "& .MuiInputBase-input": {
+              color: "text.primary",
+            },
+            "& .MuiInputLabel-root": {
+              color: "text.secondary",
+            },
+          }}
+        >
           <InputLabel>Parte do Programa</InputLabel>
           <Select
             value={programPart}
@@ -298,7 +356,7 @@ const FormPage = () => {
             <Button variant="contained" component="span">
               Selecionar Arquivos
             </Button>
-            <FormHelperText>
+            <FormHelperText sx={{ color: "text.secondary" }}>
               Até 6 arquivos (vídeos, fotos, etc.)
             </FormHelperText>
           </label>
@@ -306,14 +364,19 @@ const FormPage = () => {
 
         {files.length > 0 && (
           <Box margin="normal">
-            <Typography variant="subtitle1">Arquivos Selecionados:</Typography>
+            <Typography variant="subtitle1" sx={{ color: "text.primary" }}>
+              Arquivos Selecionados:
+            </Typography>
             <List>
               {files.map((file, index) => (
                 <ListItem key={index}>
                   <ListItemIcon>
-                    <UploadFileIcon />
+                    <UploadFileIcon color="primary" />
                   </ListItemIcon>
-                  <ListItemText primary={file.name} />
+                  <ListItemText
+                    primary={file.name}
+                    sx={{ color: "text.primary" }}
+                  />
                 </ListItem>
               ))}
             </List>
@@ -328,6 +391,14 @@ const FormPage = () => {
           multiline
           rows={4}
           margin="normal"
+          sx={{
+            "& .MuiInputBase-input": {
+              color: "text.primary",
+            },
+            "& .MuiInputLabel-root": {
+              color: "text.secondary",
+            },
+          }}
         />
 
         <Button

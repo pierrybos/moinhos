@@ -2,10 +2,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import SessionWrapper from "./components/sessionWrapper";
-import { ThemeContextProvider } from "./components/themeContext"; // Importa o provedor de contexto do tema
-import Navbar from "./components/Navbar"; // Importa a Navbar
-import Head from "next/head";
+import ClientProvider from "./components/ClientProvider"; // Importa o componente que irá gerenciar o tema no cliente
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -33,12 +30,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeContextProvider>
-          <SessionWrapper>
-            <Navbar />
-            {children}
-          </SessionWrapper>
-        </ThemeContextProvider>
+        <ClientProvider>{children}</ClientProvider>{" "}
+        {/* Renderiza a lógica de cliente aqui */}
       </body>
     </html>
   );
