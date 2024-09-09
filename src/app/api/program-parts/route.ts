@@ -18,6 +18,9 @@ export async function GET() {
             { error: "Erro ao buscar as partes do programa." },
             { status: 500 }
         );
+    } finally {
+        // Encerra a conexão para evitar retenção de cache de conexão
+        await prisma.$disconnect();
     }
 }
 
@@ -34,6 +37,9 @@ export async function POST(req: Request) {
             { error: "Erro ao adicionar a parte do programa." },
             { status: 500 }
         );
+    } finally {
+        // Encerra a conexão para evitar retenção de cache de conexão
+        await prisma.$disconnect();
     }
 }
 
@@ -51,6 +57,9 @@ export async function PATCH(req: Request) {
             { error: "Erro ao atualizar a parte do programa." },
             { status: 500 }
         );
+    } finally {
+        // Encerra a conexão para evitar retenção de cache de conexão
+        await prisma.$disconnect();
     }
 }
 
@@ -67,5 +76,8 @@ export async function DELETE(req: Request) {
             { error: "Erro ao remover a parte do programa." },
             { status: 500 }
         );
+    } finally {
+        // Encerra a conexão para evitar retenção de cache de conexão
+        await prisma.$disconnect();
     }
 }

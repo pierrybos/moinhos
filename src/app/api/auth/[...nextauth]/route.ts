@@ -16,20 +16,29 @@ const handler = NextAuth({
     callbacks: {
         async session({ session, user }) {
             // Inclui o isAdmin na sessão
-            const userId = parseInt(user.id, 10);
-            if (isNaN(userId)) {
-                throw new Error("ID de usuário inválido");
+            try {
+                const userId = parseInt(user.id, 10);
+                if (isNaN(userId)) {
+                    throw new Error("ID de usuário inválido");
+                }
+                const userFromDb = await prisma.user.findUnique({
+                    where: { id: userId },
+                });
+
+                if (userFromDb) {
+                    session.user.id = userFromDb.id.toString();
+                    session.user.isAdmin = userFromDb.isAdmin;
+                }
+
+                return session;
+            } catch (error) {
+                console.error("Erro ao buscar a sessão:", error);
+                // Retorna a sessão sem modificar caso ocorra um erro
+                return session;
+            } finally {
+                // Encerra a conexão para evitar retenção de cache de conexão
+                await prisma.$disconnect();
             }
-            const userFromDb = await prisma.user.findUnique({
-                where: { id: userId },
-            });
-            
-            if (userFromDb) {
-                session.user.id = userFromDb.id.toString();
-                session.user.isAdmin = userFromDb.isAdmin;
-            }
-            
-            return session;
         },
     },
 });

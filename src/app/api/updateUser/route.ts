@@ -21,5 +21,8 @@ export async function PATCH(req: Request) {
             { error: "Erro ao atualizar a permissão." },
             { status: 500 }
         );
+    } finally {
+        // Encerra a conexão para evitar retenção de cache de conexão
+        await prisma.$disconnect();
     }
 }

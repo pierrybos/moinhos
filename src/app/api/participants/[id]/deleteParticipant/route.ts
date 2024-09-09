@@ -28,5 +28,8 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
             { error: "Erro ao desativar o participante." },
             { status: 500 }
         );
+    } finally {
+        // Encerra a conexão para evitar retenção de cache de conexão
+        await prisma.$disconnect();
     }
 }

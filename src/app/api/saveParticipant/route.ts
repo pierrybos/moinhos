@@ -43,6 +43,9 @@ export async function POST(req: Request) {
                 { error: "Erro ao salvar os dados." },
                 { status: 500 }
             );
+        } finally {
+            // Encerra a conexão para evitar retenção de cache de conexão
+            await prisma.$disconnect();
         }
     }
     

@@ -14,5 +14,8 @@ export async function GET() {
             { error: "Erro ao buscar usuários." },
             { status: 500 }
         );
+    } finally {
+        // Encerra a conexão para evitar retenção de cache de conexão
+        await prisma.$disconnect();
     }
 }

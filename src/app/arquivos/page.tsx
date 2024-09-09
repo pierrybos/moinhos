@@ -32,16 +32,19 @@ type Participant = {
   }[];
 };
 
-export const revalidate = 60;
-export const dynamicParams = true; // or false, to 404 on unknown paths
+export const dynamic = "force-dynamic"; // Garante que a página seja sempre renderizada dinamicamente
 
 const ViewUploads = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
 
   useEffect(() => {
+    const timestamp = new Date().getTime(); // Generate a unique timestamp
+
     // Função para buscar os dados dos participantes e arquivos
     const fetchParticipants = async () => {
-      const res = await fetch("/api/getParticipants");
+      const res = await fetch(`/api/getParticipants?timestamp=${timestamp}`, {
+        cache: "no-store",
+      });
       const data = await res.json();
       setParticipants(data.participants);
     };

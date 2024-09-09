@@ -64,7 +64,9 @@ const AdminPanel = () => {
     if (session?.user && session.user.isAdmin) {
       // Verifica se session e session.user não são undefined
       const fetchParticipants = async () => {
-        const res = await fetch("/api/getParticipants");
+        const res = await fetch("/api/getParticipants", {
+          cache: "no-store",
+        });
         const data = await res.json();
         setParticipants(data.participants);
       };
