@@ -57,13 +57,13 @@ const Navbar = () => {
       onKeyDown={toggleDrawer(false)}
     >
       <List>
-        <ListItem button component={Link} href="/formulario">
+        <ListItem component={Link} href="/formulario">
           <ListItemIcon>
             <HomeIcon />
           </ListItemIcon>
           <ListItemText primary="Formulário" />
         </ListItem>
-        <ListItem button component={Link} href="/arquivos">
+        <ListItem component={Link} href="/arquivos">
           <ListItemIcon>
             <DescriptionIcon />
           </ListItemIcon>
@@ -71,14 +71,14 @@ const Navbar = () => {
         </ListItem>
         {session && (
           <>
-            <ListItem button component={Link} href="/admin">
+            <ListItem component={Link} href="/admin">
               <ListItemIcon>
                 <AccountCircleIcon />
               </ListItemIcon>
               <ListItemText primary="Perfil" />
             </ListItem>
             {isAdmin && (
-              <ListItem button component={Link} href="/admin/users">
+              <ListItem component={Link} href="/admin/users">
                 <ListItemIcon>
                   <AdminPanelSettingsIcon />
                 </ListItemIcon>
@@ -86,14 +86,14 @@ const Navbar = () => {
               </ListItem>
             )}
             {isAdmin && (
-              <ListItem button component={Link} href="/admin/program-parts">
+              <ListItem component={Link} href="/admin/program-parts">
                 <ListItemIcon>
                   <ListAltIcon />
                 </ListItemIcon>
                 <ListItemText primary="Programação" />
               </ListItem>
             )}
-            <ListItem button onClick={() => signOut()}>
+            <ListItem onClick={() => signOut()}>
               <ListItemIcon>
                 <LogoutIcon />
               </ListItemIcon>
@@ -102,7 +102,7 @@ const Navbar = () => {
           </>
         )}
         {!session && (
-          <ListItem button onClick={() => signIn()}>
+          <ListItem onClick={() => signIn()}>
             <ListItemIcon>
               <LoginIcon />
             </ListItemIcon>
