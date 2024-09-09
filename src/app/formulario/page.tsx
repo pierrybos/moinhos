@@ -280,23 +280,21 @@ const FormPage = () => {
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
         >
-          {() => (
-            <TextField
-              label="Telefone"
-              fullWidth
-              margin="normal"
-              required
-              placeholder="(XX) XXXXX-XXXX"
-              sx={{
-                "& .MuiInputBase-input": {
-                  color: "text.primary",
-                },
-                "& .MuiInputLabel-root": {
-                  color: "text.secondary",
-                },
-              }}
-            />
-          )}
+          <TextField
+            label="Telefone"
+            fullWidth
+            margin="normal"
+            required
+            placeholder="(XX) XXXXX-XXXX"
+            sx={{
+              "& .MuiInputBase-input": {
+                color: "text.primary",
+              },
+              "& .MuiInputLabel-root": {
+                color: "text.secondary",
+              },
+            }}
+          />
         </InputMask>
 
         <FormControlLabel
