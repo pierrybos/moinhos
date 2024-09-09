@@ -36,7 +36,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "src/utils/asdf"
+    "src/utils/asdf",
+    "global.d.ts",
   ],
   "exclude": [
     "node_modules"
