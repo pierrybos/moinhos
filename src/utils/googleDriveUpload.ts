@@ -3,9 +3,10 @@ import { google } from 'googleapis';
 import { Readable } from 'stream';
 import path from 'path';
 
-// Função para autenticar e obter o cliente do Google Drive
+const googleDriveKeyJson = JSON.parse(process.env.GOOGLE_DRIVE_KEY_JSON || "{}");
+
 const auth = new google.auth.GoogleAuth({
-    keyFile: path.resolve('../private/key.json'), // Substitua pelo caminho correto do seu arquivo JSON
+    credentials: googleDriveKeyJson, // Usa as credenciais diretamente do JSON parseado
     scopes: ['https://www.googleapis.com/auth/drive.file'],
 });
 
