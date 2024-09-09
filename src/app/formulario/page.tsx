@@ -38,32 +38,36 @@ const FormPage = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchToken = async () => {
-      try {
-        const response = await fetch("/api/getAccessToken");
-        const data = await response.json();
+    // Verifica se o código está no client-side para evitar erros na build
+    if (typeof window !== "undefined") {
+      const fetchToken = async () => {
+        try {
+          const response = await fetch("/api/getAccessToken");
+          const data = await response.json();
 
-        if (data.accessToken) {
-          setAccessToken(data.accessToken);
-        } else {
-          throw new Error("Failed to retrieve access token");
+          if (data.accessToken) {
+            setAccessToken(data.accessToken);
+          } else {
+            throw new Error("Failed to retrieve access token");
+          }
+        } catch (error) {
+          alert("Erro ao obter o token de acesso. Por favor, tente novamente.");
         }
-      } catch (error) {
-        alert("Erro ao obter o token de acesso. Por favor, tente novamente.");
-      }
-    };
-    fetchToken();
+      };
 
-    const fetchProgramParts = async () => {
-      try {
-        const response = await fetch("/api/program-parts");
-        const data = await response.json();
-        setProgramParts(data);
-      } catch (error) {
-        console.error("Erro ao carregar as partes do programa:", error);
-      }
-    };
-    fetchProgramParts();
+      const fetchProgramParts = async () => {
+        try {
+          const response = await fetch("/api/program-parts");
+          const data = await response.json();
+          setProgramParts(data);
+        } catch (error) {
+          console.error("Erro ao carregar as partes do programa:", error);
+        }
+      };
+
+      fetchToken();
+      fetchProgramParts();
+    }
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -138,6 +142,11 @@ const FormPage = () => {
 
     try {
       const cleanedPhone = phone.replace(/\D/g, ""); // Remove todos os caracteres não numéricos
+      // Aqui, asseguramos que as chamadas à API ocorrem somente se o token de acesso está disponível
+      if (!accessToken) {
+        throw new Error("Token de acesso não está disponível.");
+      }
+
       const date = new Date(participationDate);
       const yearFolderId = await createFolder(
         date.getFullYear().toString(),
