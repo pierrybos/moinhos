@@ -8,4 +8,9 @@ const nextConfig = {
   },
 };
 
+console.log("Next.js configuration loaded:", nextConfig);
+console.log("Next.js configuration loaded:", nextConfig);
+console.log("Next.js configuration loaded:", nextConfig);
+console.log("Next.js configuration loaded:", nextConfig);
+
 module.exports = nextConfig;
