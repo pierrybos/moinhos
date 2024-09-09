@@ -27,6 +27,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import LoginIcon from "@mui/icons-material/Login";
 import ThemeToggleButton from "./ThemeToggleButton"; // Importe o ThemeToggleButton
 import ListAltIcon from "@mui/icons-material/ListAlt";
+import Logo from "./Logo";
 
 const Navbar = () => {
   const { data: session } = useSession();
@@ -131,10 +132,22 @@ const Navbar = () => {
         >
           <MenuIcon />
         </IconButton>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{ flexGrow: 1, display: "flex", alignItems: "center" }}
+        >
+          <Box
+            component="span"
+            sx={{ mr: 1, display: { xs: "none", md: "block" } }}
+          >
+            <Logo width={50} height={50} />
+          </Box>
           IASD Moinhos - Multimídia
         </Typography>
-
+        <Box sx={{ display: { md: "none", xs: "block" } }}>
+          <Logo width={50} height={50} />
+        </Box>
         {/* Botões visíveis apenas em telas maiores */}
         <Box sx={{ display: { xs: "none", md: "flex" } }}>
           <Button
