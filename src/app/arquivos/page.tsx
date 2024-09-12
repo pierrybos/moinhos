@@ -15,6 +15,7 @@ import {
   Chip,
   Box,
 } from "@mui/material";
+import { useSession } from "next-auth/react";
 
 // Tipo para os dados dos participantes
 type Participant = {
@@ -36,6 +37,8 @@ export const dynamic = "force-dynamic"; // Garante que a página seja sempre ren
 
 const ViewUploads = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const { data: session, status } = useSession();
+  if (status === "loading") return <p>Carregando...</p>;
 
   useEffect(() => {
     const timestamp = new Date().getTime(); // Generate a unique timestamp
@@ -94,13 +97,16 @@ const ViewUploads = () => {
                 <TableCell>
                   {participant.files.map((file) => (
                     <Box key={file.id} mb={1}>
-                      <a
-                        href={file.driveLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {file.filename}
-                      </a>
+                      {!session && (
+                        <a
+                          href={file.driveLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {file.filename}
+                        </a>
+                      )}
+                      {session && <span>{file.filename}</span>}
                     </Box>
                   ))}
                 </TableCell>
