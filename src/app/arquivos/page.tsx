@@ -39,8 +39,6 @@ const ViewUploads = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const { data: session, status } = useSession();
   if (status === "loading") return <p>Carregando...</p>;
-  const { data: session, status } = useSession();
-  if (status === "loading") return <p>Carregando...</p>;
 
   useEffect(() => {
     const timestamp = new Date().getTime(); // Generate a unique timestamp
