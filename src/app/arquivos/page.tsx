@@ -99,7 +99,10 @@ const ViewUploads = () => {
                 <TableCell>
                   {participant.files.map((file) => (
                     <Box key={file.id} mb={1}>
-                      {!session && (
+                      {(!session || !session.user?.isAdmin) && (
+                        <span>{file.filename}</span>
+                      )}
+                      {session && session.user?.isAdmin && (
                         <a
                           href={file.driveLink}
                           target="_blank"
@@ -108,17 +111,6 @@ const ViewUploads = () => {
                           {file.filename}
                         </a>
                       )}
-                      {session && <span>{file.filename}</span>}
-                      {!session && (
-                        <a
-                          href={file.driveLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {file.filename}
-                        </a>
-                      )}
-                      {session && <span>{file.filename}</span>}
                     </Box>
                   ))}
                 </TableCell>
