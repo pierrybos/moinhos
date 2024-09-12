@@ -38,22 +38,24 @@ export const dynamic = "force-dynamic"; // Garante que a página seja sempre ren
 const ViewUploads = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const { data: session, status } = useSession();
-  if (status === "loading") return <p>Carregando...</p>;
-
   useEffect(() => {
-    const timestamp = new Date().getTime(); // Generate a unique timestamp
+    if (status !== "loading") {
+      const timestamp = new Date().getTime(); // Generate a unique timestamp
 
-    // Função para buscar os dados dos participantes e arquivos
-    const fetchParticipants = async () => {
-      const res = await fetch(`/api/getParticipants?timestamp=${timestamp}`, {
-        cache: "no-store",
-      });
-      const data = await res.json();
-      setParticipants(data.participants);
-    };
+      // Função para buscar os dados dos participantes e arquivos
+      const fetchParticipants = async () => {
+        const res = await fetch(`/api/getParticipants?timestamp=${timestamp}`, {
+          cache: "no-store",
+        });
+        const data = await res.json();
+        setParticipants(data.participants);
+      };
 
-    fetchParticipants();
-  }, []);
+      fetchParticipants();
+    }
+  }, [status]);
+
+  if (status === "loading") return <p>Carregando...</p>;
 
   return (
     <Container maxWidth="lg">
