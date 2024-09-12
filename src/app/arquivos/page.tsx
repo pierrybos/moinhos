@@ -39,6 +39,8 @@ const ViewUploads = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const { data: session, status } = useSession();
   if (status === "loading") return <p>Carregando...</p>;
+  const { data: session, status } = useSession();
+  if (status === "loading") return <p>Carregando...</p>;
 
   useEffect(() => {
     const timestamp = new Date().getTime(); // Generate a unique timestamp
@@ -97,6 +99,16 @@ const ViewUploads = () => {
                 <TableCell>
                   {participant.files.map((file) => (
                     <Box key={file.id} mb={1}>
+                      {!session && (
+                        <a
+                          href={file.driveLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {file.filename}
+                        </a>
+                      )}
+                      {session && <span>{file.filename}</span>}
                       {!session && (
                         <a
                           href={file.driveLink}
