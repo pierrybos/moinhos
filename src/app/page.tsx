@@ -57,9 +57,10 @@ export default function Home() {
           Arquivos
         </Link>
         <p className="mt-4 text-sm sm:text-base">
-          Consulte o status, a situação dos seus arquivos para verificar se
-          foram recebidos corretamente pela nossa equipe ou se havera a
-          necessidade de reenvio devido alguma incompatibilidade.
+          Verifique o status e a situação dos seus arquivos para confirmar se
+          foram recebidos corretamente pela nossa equipe. Caso contrário, você
+          será informado sobre a necessidade de reenvio por conta de alguma
+          incompatibilidade.
         </p>
       </div>
     </div>

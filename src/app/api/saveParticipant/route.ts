@@ -9,7 +9,7 @@ export async function POST(req: Request) {
         const data = await req.json();
         
         const { participantName, churchGroupState, participationDate, programPart,  phone,
-            isWhatsApp, observations, files } = data;
+            isWhatsApp, observations, files, imageRightsGranted, isMember } = data;
             
             // Salvar o participante no banco de dados com status "Pendente"
             const participant = await prisma.participant.create({
@@ -22,6 +22,8 @@ export async function POST(req: Request) {
                     isWhatsApp,
                     observations,
                     status: "Pendente",
+                    isMember,
+                    imageRightsGranted: imageRightsGranted || isMember
                 },
             });
             

@@ -24,6 +24,9 @@ import {
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import MaskedInput from "react-text-mask"; // Importa o MaskedInput
 
+import CustomSnackbar from "../components/CustomSnackbar"; // ajuste o caminho conforme necessário
+import { useSnackbar } from "../components/useSnackbar"; // ajuste o caminho conforme necessário
+
 const FormPage = () => {
   const [participantName, setParticipantName] = useState("");
   const [churchGroupState, setChurchGroupState] = useState("");
@@ -36,6 +39,25 @@ const FormPage = () => {
   const [observations, setObservations] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [imageRightsGranted, setImageRightsGranted] = useState(false);
+  const [isMember, setIsMember] = useState(false);
+  const { openSnackbar, snackbarProps } = useSnackbar();
+
+  const handleImageRightsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImageRightsGranted(e.target.checked);
+  };
+
+  const handleIsMemberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isChecked = e.target.checked;
+    setIsMember(isChecked);
+
+    // Se for membro, direito de imagem é automaticamente concedido e oculto
+    if (isChecked) {
+      setImageRightsGranted(true);
+    } else {
+      setImageRightsGranted(false);
+    }
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -50,7 +72,10 @@ const FormPage = () => {
             throw new Error("Failed to retrieve access token");
           }
         } catch (error) {
-          alert("Erro ao obter o token de acesso. Por favor, tente novamente.");
+          openSnackbar(
+            "Erro ao obter o token de acesso. Por favor, tente novamente.",
+            "warning"
+          );
         }
       };
 
@@ -127,13 +152,25 @@ const FormPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!isMember && !imageRightsGranted) {
+      openSnackbar(
+        "Você deve conceder o direito de imagem ou ser membro da IASD para continuar.",
+        "warning"
+      );
+
+      return;
+    }
+
     if (files.length === 0) {
-      alert("Por favor, selecione até 6 arquivos.");
+      openSnackbar(
+        "Por favor, selecione pelo menos 1, até 6 arquivos.",
+        "warning"
+      );
       return;
     }
 
     if (!participationDate) {
-      alert("Por favor, selecione uma data.");
+      openSnackbar("Por favor, selecione uma data.", "warning");
       return;
     }
 
@@ -181,6 +218,8 @@ const FormPage = () => {
         isWhatsApp,
         observations,
         files: uploadedFiles, // Metadados dos arquivos já no Google Drive
+        imageRightsGranted,
+        isMember,
       };
 
       await fetch("/api/saveParticipant", {
@@ -191,7 +230,7 @@ const FormPage = () => {
         body: JSON.stringify(payload),
       });
 
-      alert("Dados salvos com sucesso!");
+      openSnackbar("Dados salvos com sucesso!", "warning");
       setFiles([]);
       setParticipantName("");
       setChurchGroupState("");
@@ -202,7 +241,7 @@ const FormPage = () => {
       setObservations("");
     } catch (error) {
       console.error("Erro durante o upload:", error);
-      alert("Erro inesperado durante o upload.");
+      openSnackbar("Erro inesperado durante o upload.", "warning");
     } finally {
       setIsSubmitting(false);
     }
@@ -218,6 +257,8 @@ const FormPage = () => {
         borderRadius: 2,
       }}
     >
+      <CustomSnackbar {...snackbarProps} />
+
       <Typography
         variant="h4"
         component="h1"
@@ -432,6 +473,36 @@ const FormPage = () => {
             },
           }}
         />
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={isMember}
+              onChange={handleIsMemberChange}
+              color="primary"
+            />
+          }
+          label="É membro da IASD?"
+          sx={{
+            color: "text.primary",
+          }}
+        />
+
+        {/* Exibe o checkbox de direito de imagem somente se não for membro */}
+        {!isMember && (
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={imageRightsGranted}
+                onChange={handleImageRightsChange}
+                color="primary"
+              />
+            }
+            label="Concedo o direito de uso de minha imagem para divulgação."
+            sx={{
+              color: "text.primary",
+            }}
+          />
+        )}
 
         <Button
           type="submit"

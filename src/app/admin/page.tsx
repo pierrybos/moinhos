@@ -20,9 +20,14 @@ import {
   Box,
   TextField,
   IconButton,
+  Tooltip,
 } from "@mui/material";
-import WhatsAppIcon from "@mui/icons-material/WhatsApp"; // Importando o ícone do WhatsApp
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import WarningIcon from "@mui/icons-material/Warning";
 import ProtectedRoute from "../components/ProtectedRoute";
+import { useSnackbar } from "../components/useSnackbar"; // Ajuste o caminho conforme necessário
+import CustomSnackbar from "../components/CustomSnackbar";
 
 // Tipo para os dados dos participantes
 type Participant = {
@@ -35,6 +40,8 @@ type Participant = {
   observations: string;
   phone?: string;
   isWhatsApp?: boolean;
+  isMember?: boolean; // Adicione este campo para verificar se é membro
+  allowedImage?: boolean; // Campo para direito de imagem
   files: {
     id: number;
     filename: string;
@@ -55,6 +62,8 @@ const AdminPanel = () => {
   const [statusUpdate, setStatusUpdate] = useState<{ [key: number]: string }>(
     {}
   );
+  const { openSnackbar, snackbarProps } = useSnackbar();
+
   const [observationsUpdate, setObservationsUpdate] = useState<{
     [key: number]: string;
   }>({});
@@ -104,9 +113,9 @@ const AdminPanel = () => {
             : participant
         )
       );
-      alert("Atualizações salvas com sucesso!");
+      openSnackbar("Atualizações salvas com sucesso!", "success");
     } else {
-      alert("Erro ao salvar as atualizações.");
+      openSnackbar("Erro ao salvar as atualizações.", "warning");
     }
   };
 
@@ -124,9 +133,9 @@ const AdminPanel = () => {
       setParticipants((prev) =>
         prev.filter((participant) => participant.id !== id)
       );
-      alert("Participante deletado com sucesso!");
+      openSnackbar("Participante deletado com sucesso!", "success");
     } else {
-      alert("Erro ao deletar o participante.");
+      openSnackbar("Erro ao deletar o participante.", "warning");
     }
   };
 
@@ -149,6 +158,7 @@ const AdminPanel = () => {
                 <TableCell>Observações</TableCell>
                 <TableCell>Arquivos</TableCell>
                 <TableCell>Ações</TableCell>
+                <TableCell>Imagem/Membro</TableCell> {/* Nova coluna */}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -247,12 +257,29 @@ const AdminPanel = () => {
                       Deletar
                     </Button>
                   </TableCell>
+                  <TableCell>
+                    {/* Ícones e mensagens de status */}
+                    {participant.isMember ? (
+                      <Tooltip title="É membro da IASD">
+                        <CheckCircleIcon color="success" />
+                      </Tooltip>
+                    ) : participant.allowedImage ? (
+                      <Tooltip title="Direito de uso de imagem concedido">
+                        <CheckCircleIcon color="success" />
+                      </Tooltip>
+                    ) : (
+                      <Tooltip title="Não é membro nem permitiu imagem">
+                        <WarningIcon color="error" />
+                      </Tooltip>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
       </Container>
+      <CustomSnackbar {...snackbarProps} />
     </ProtectedRoute>
   );
 };
