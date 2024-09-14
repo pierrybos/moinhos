@@ -22,7 +22,7 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import MaskedInput from "react-text-mask"; // Importa o MaskedInput
+import MaskedInput from "react-text-mask";
 
 import CustomSnackbar from "../components/CustomSnackbar"; // ajuste o caminho conforme necessário
 import { useSnackbar } from "../components/useSnackbar"; // ajuste o caminho conforme necessário
@@ -51,7 +51,7 @@ const FormPage = () => {
     const isChecked = e.target.checked;
     setIsMember(isChecked);
 
-    // Se for membro, direito de imagem é automaticamente concedido e oculto
+    // Se for membro, direito de imagem é automaticamente concedido
     if (isChecked) {
       setImageRightsGranted(true);
     } else {
@@ -217,7 +217,7 @@ const FormPage = () => {
         phone: cleanedPhone,
         isWhatsApp,
         observations,
-        files: uploadedFiles, // Metadados dos arquivos já no Google Drive
+        files: uploadedFiles,
         imageRightsGranted,
         isMember,
       };
@@ -230,7 +230,8 @@ const FormPage = () => {
         body: JSON.stringify(payload),
       });
 
-      openSnackbar("Dados salvos com sucesso!", "warning");
+      openSnackbar("Dados salvos com sucesso!", "success");
+      // Resetar o formulário
       setFiles([]);
       setParticipantName("");
       setChurchGroupState("");
@@ -241,7 +242,7 @@ const FormPage = () => {
       setObservations("");
     } catch (error) {
       console.error("Erro durante o upload:", error);
-      openSnackbar("Erro inesperado durante o upload.", "warning");
+      openSnackbar("Erro inesperado durante o upload.", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -473,6 +474,7 @@ const FormPage = () => {
             },
           }}
         />
+
         <FormControlLabel
           control={
             <Checkbox
@@ -487,22 +489,21 @@ const FormPage = () => {
           }}
         />
 
-        {/* Exibe o checkbox de direito de imagem somente se não for membro */}
-        {!isMember && (
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={imageRightsGranted}
-                onChange={handleImageRightsChange}
-                color="primary"
-              />
-            }
-            label="Concedo o direito de uso de minha imagem para divulgação."
-            sx={{
-              color: "text.primary",
-            }}
-          />
-        )}
+        {/* Checkbox de direito de imagem que é desabilitado quando for membro */}
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={imageRightsGranted}
+              onChange={handleImageRightsChange}
+              disabled={isMember}
+              color="primary"
+            />
+          }
+          label="Concedo o direito de uso de minha imagem para divulgação."
+          sx={{
+            color: "text.primary",
+          }}
+        />
 
         <Button
           type="submit"
