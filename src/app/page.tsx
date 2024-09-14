@@ -29,7 +29,7 @@ export default function Home() {
             color: theme.palette.primary.contrastText,
           }}
         >
-          Formulário
+          Enviar Arquivos
         </Link>
         <p className="mt-4 text-sm sm:text-base">
           Recebeu um convite para participar de nossos cultos? Envie seus
@@ -54,7 +54,7 @@ export default function Home() {
             color: theme.palette.primary.contrastText,
           }}
         >
-          Arquivos
+          Consultar enviados
         </Link>
         <p className="mt-4 text-sm sm:text-base">
           Verifique o status e a situação dos seus arquivos para confirmar se
