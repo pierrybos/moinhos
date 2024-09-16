@@ -8,8 +8,6 @@ const prisma = new PrismaClient();
 export async function POST(req: Request) {
     try {
         const data = await req.json();
-        
-        const { files } = data;
         const allowedExtensions = getAllExtensions();
         
         const {
