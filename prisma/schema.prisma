@@ -24,12 +24,14 @@ model Participant {
   status              String     @default("Pendente")
   files               File[]
   isActive            Boolean    @default(true) // Campo para exclusão lógica
-  phone               String?    // Novo campo para o telefone
-  isWhatsApp          Boolean    @default(false) // Novo campo para indicar se o telefone é WhatsApp
-  imageRightsGranted  Boolean    @default(false) // Novo campo para indicar se tem direito de imagem
-  isMember            Boolean    @default(false) // Novo campo para indicar se é membro da IASD
-
+  phone               String?    // Campo para o telefone
+  isWhatsApp          Boolean    @default(false) // Campo para indicar se o telefone é WhatsApp
+  imageRightsGranted  Boolean    @default(false) // Campo para indicar se tem direito de imagem
+  isMember            Boolean    @default(false) // Campo para indicar se é membro da IASD
+  performanceType     String     @default("Solo") // Campo para armazenar o tipo de apresentação (Solo, Conjunto/Quarteto, Coral)
+  microphoneCount     Int        @default(1) // Campo opcional para o número de microfones necessários
 }
+
 
 model ProgramPart {
   id    Int    @id @default(autoincrement())

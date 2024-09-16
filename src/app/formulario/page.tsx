@@ -20,12 +20,15 @@ import {
   Backdrop,
   Checkbox,
   FormControlLabel,
+  Slider,
 } from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import MaskedInput from "react-text-mask";
-
 import CustomSnackbar from "../components/CustomSnackbar"; // ajuste o caminho conforme necessário
 import { useSnackbar } from "../components/useSnackbar"; // ajuste o caminho conforme necessário
+
+// Importando o módulo com as extensões permitidas
+import { getAllExtensions } from "../utils/fileExtensions"; // ajuste o caminho conforme sua estrutura de pastas
 
 const FormPage = () => {
   const [participantName, setParticipantName] = useState("");
@@ -42,6 +45,25 @@ const FormPage = () => {
   const [imageRightsGranted, setImageRightsGranted] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const { openSnackbar, snackbarProps } = useSnackbar();
+
+  // Novos estados para o tipo de apresentação e microfones
+  const [performanceType, setPerformanceType] = useState("");
+  const [microphoneCount, setMicrophoneCount] = useState<number>(1); // Valor inicial do slider
+
+  // Função para manipular mudanças no tipo de apresentação
+  const handlePerformanceTypeChange = (
+    e: React.ChangeEvent<{ value: unknown }>
+  ) => {
+    const value = e.target.value as string;
+    setPerformanceType(value);
+
+    // Reseta o número de microfones se for "Solo"
+    if (value === "Solo") {
+      setMicrophoneCount(1);
+    }
+  };
+
+  const extensionList = getAllExtensions().join(",");
 
   const handleImageRightsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageRightsGranted(e.target.checked);
@@ -220,6 +242,8 @@ const FormPage = () => {
         files: uploadedFiles,
         imageRightsGranted,
         isMember,
+        performanceType,
+        microphoneCount,
       };
 
       await fetch("/api/saveParticipant", {
@@ -400,6 +424,59 @@ const FormPage = () => {
             },
           }}
         >
+          <InputLabel>Tipo de Apresentação</InputLabel>
+          <Select
+            value={performanceType}
+            onChange={handlePerformanceTypeChange}
+            label="Tipo de Apresentação"
+          >
+            <MenuItem value="Solo">Solo</MenuItem>
+            <MenuItem value="Conjunto/Quarteto">Conjunto/Quarteto</MenuItem>
+            <MenuItem value="Coral">Coral</MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl
+          fullWidth
+          required
+          margin="normal"
+          sx={{
+            "& .MuiInputBase-input": {
+              color: "text.primary",
+            },
+            "& .MuiInputLabel-root": {
+              color: "text.secondary",
+            },
+          }}
+        >
+          <Typography gutterBottom>
+            Número de Microfones Necessários: {microphoneCount}
+          </Typography>
+          <Slider
+            value={microphoneCount}
+            onChange={(e, newValue) => setMicrophoneCount(newValue as number)}
+            valueLabelDisplay="auto"
+            step={1}
+            marks
+            min={1}
+            max={6}
+            disabled={performanceType === "Solo"} // Desabilita o campo se for Solo
+            aria-labelledby="microphone-slider"
+          />
+        </FormControl>
+        <FormControl
+          fullWidth
+          required
+          margin="normal"
+          sx={{
+            "& .MuiInputBase-input": {
+              color: "text.primary",
+            },
+            "& .MuiInputLabel-root": {
+              color: "text.secondary",
+            },
+          }}
+        >
           <InputLabel>Parte do Programa</InputLabel>
           <Select
             value={programPart}
@@ -422,7 +499,7 @@ const FormPage = () => {
             type="file"
             multiple
             onChange={handleFileChange}
-            accept=".jpg,.jpeg,.png,.mp4,.avi,.mp3,.pdf"
+            accept={extensionList}
             style={{ display: "none" }}
             id="upload-files"
           />
