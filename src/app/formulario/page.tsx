@@ -28,7 +28,7 @@ import CustomSnackbar from "../components/CustomSnackbar"; // ajuste o caminho c
 import { useSnackbar } from "../components/useSnackbar"; // ajuste o caminho conforme necessário
 
 // Importando o módulo com as extensões permitidas
-import { getAllExtensions } from "../utils/fileExtensions"; // ajuste o caminho conforme sua estrutura de pastas
+import { getAllExtensions } from "../../utils/fileExtensions"; // ajuste o caminho conforme sua estrutura de pastas
 
 const FormPage = () => {
   const [participantName, setParticipantName] = useState("");

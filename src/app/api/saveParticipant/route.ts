@@ -1,7 +1,7 @@
 // app/api/saveParticipant/route.ts
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { getAllExtensions } from "../../utils/fileExtensions"; // ajuste o caminho conforme necessário
+import { getAllExtensions } from "../../../utils/fileExtensions"; // ajuste o caminho conforme necessário
 
 const prisma = new PrismaClient();
 
