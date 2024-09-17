@@ -5,31 +5,36 @@ import { useSession } from "next-auth/react";
 import React, { useEffect, useState } from "react";
 import {
   Container,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  IconButton,
+  Collapse,
+  Box,
   Button,
+  Typography,
   Select,
   MenuItem,
   FormControl,
-  Box,
   TextField,
-  IconButton,
   Tooltip,
+  Grid,
+  Chip,
+  Divider,
 } from "@mui/material";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import WarningIcon from "@mui/icons-material/Warning";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import EditIcon from "@mui/icons-material/Edit";
+import SaveIcon from "@mui/icons-material/Save";
+import CancelIcon from "@mui/icons-material/Cancel";
 import ProtectedRoute from "../components/ProtectedRoute";
-import { useSnackbar } from "../components/useSnackbar"; // Ajuste o caminho conforme necessário
+import { useSnackbar } from "../components/useSnackbar";
 import CustomSnackbar from "../components/CustomSnackbar";
 
-// Tipo para os dados dos participantes
 type Participant = {
   id: number;
   name: string;
@@ -40,8 +45,10 @@ type Participant = {
   observations: string;
   phone?: string;
   isWhatsApp?: boolean;
-  isMember?: boolean; // Adicione este campo para verificar se é membro
-  allowedImage?: boolean; // Campo para direito de imagem
+  isMember?: boolean;
+  allowedImage?: boolean;
+  performanceType: string; // Novo campo
+  microphoneCount?: number; // Novo campo
   files: {
     id: number;
     filename: string;
@@ -59,19 +66,18 @@ const formatPhoneNumber = (phone: string) => {
 const AdminPanel = () => {
   const { data: session } = useSession();
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [expanded, setExpanded] = useState<number | null>(null);
   const [statusUpdate, setStatusUpdate] = useState<{ [key: number]: string }>(
     {}
   );
-  const { openSnackbar, snackbarProps } = useSnackbar();
-
   const [observationsUpdate, setObservationsUpdate] = useState<{
     [key: number]: string;
   }>({});
+  const [editMode, setEditMode] = useState<{ [key: number]: boolean }>({});
+  const { openSnackbar, snackbarProps } = useSnackbar();
 
-  // Carrega os dados dos participantes quando o usuário é autenticado e tem permissões de admin
   useEffect(() => {
     if (session?.user && session.user.isAdmin) {
-      // Verifica se session e session.user não são undefined
       const fetchParticipants = async () => {
         const res = await fetch("/api/getParticipants", {
           cache: "no-store",
@@ -84,7 +90,6 @@ const AdminPanel = () => {
     }
   }, [session]);
 
-  // Função para atualizar o status e as observações do participante
   const handleUpdate = async (id: number) => {
     const newStatus = statusUpdate[id];
     const newObservation = observationsUpdate[id];
@@ -114,6 +119,7 @@ const AdminPanel = () => {
         )
       );
       openSnackbar("Atualizações salvas com sucesso!", "success");
+      setEditMode((prev) => ({ ...prev, [id]: false })); // Fecha o modo de edição
     } else {
       openSnackbar("Erro ao salvar as atualizações.", "warning");
     }
@@ -139,145 +145,260 @@ const AdminPanel = () => {
     }
   };
 
+  const handleExpandToggle = (id: number) => {
+    setExpanded((prev) => (prev === id ? null : id));
+  };
+
+  const handleEditToggle = (id: number) => {
+    setEditMode((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case "Aprovado":
+        return {
+          color: "#388e3c",
+          border: "1px solid #388e3c",
+          backgroundColor: "#e8f5e9",
+        };
+      case "Recusado":
+        return {
+          color: "#d32f2f",
+          border: "1px solid #d32f2f",
+          backgroundColor: "#ffebee",
+        };
+      case "Pendente":
+      default:
+        return {
+          color: "#616161",
+          border: "1px solid #616161",
+          backgroundColor: "#f5f5f5",
+        };
+    }
+  };
+
   return (
     <ProtectedRoute>
       <Container maxWidth="lg">
         <Typography variant="h4" component="h1" gutterBottom>
           Painel de Administração
         </Typography>
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Nome</TableCell>
-                <TableCell>Igreja/Grupo/Estado</TableCell>
-                <TableCell>Data de Participação</TableCell>
-                <TableCell>Parte do Programa</TableCell>
-                <TableCell>Telefone</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Observações</TableCell>
-                <TableCell>Arquivos</TableCell>
-                <TableCell>Ações</TableCell>
-                <TableCell>Imagem/Membro</TableCell> {/* Nova coluna */}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {participants.map((participant) => (
-                <TableRow key={participant.id}>
-                  <TableCell>{participant.name}</TableCell>
-                  <TableCell>{participant.group}</TableCell>
-                  <TableCell>
-                    {new Date(
-                      participant.participationDate
-                    ).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>{participant.programPart}</TableCell>
-                  <TableCell>
-                    {participant.phone
-                      ? formatPhoneNumber(participant.phone)
-                      : ""}{" "}
-                    {participant.isWhatsApp && participant.phone && (
-                      <IconButton
-                        href={`https://wa.me/55${participant.phone.replace(
-                          /\D/g,
-                          ""
-                        )}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="WhatsApp"
-                      >
-                        <WhatsAppIcon color="success" />
-                      </IconButton>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <FormControl>
-                      <Select
-                        value={
-                          statusUpdate[participant.id] || participant.status
-                        }
-                        onChange={(e) =>
-                          setStatusUpdate({
-                            ...statusUpdate,
-                            [participant.id]: e.target.value,
-                          })
-                        }
-                      >
-                        <MenuItem value="Pendente">Pendente</MenuItem>
-                        <MenuItem value="Aprovado">Aprovado</MenuItem>
-                        <MenuItem value="Recusado">Recusado</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </TableCell>
-                  <TableCell>
-                    <TextField
-                      value={
-                        observationsUpdate[participant.id] ||
-                        participant.observations
-                      }
-                      onChange={(e) =>
-                        setObservationsUpdate({
-                          ...observationsUpdate,
-                          [participant.id]: e.target.value,
-                        })
-                      }
-                      multiline
-                      rows={3}
-                      variant="outlined"
-                      fullWidth
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {participant.files.map((file) => (
-                      <Box key={file.id} mb={1}>
-                        <a
-                          href={file.driveLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {file.filename}
-                        </a>
+        <Grid container spacing={2}>
+          {participants.map((participant) => (
+            <Grid item xs={12} sm={6} md={4} key={participant.id}>
+              <List>
+                <ListItem
+                  button
+                  onClick={() => handleExpandToggle(participant.id)}
+                >
+                  <ListItemText
+                    primary={
+                      <Box display="flex" alignItems="center">
+                        <Typography variant="body1" component="span">
+                          {participant.name}
+                        </Typography>
+                        <Chip
+                          label={participant.status}
+                          size="small"
+                          sx={{
+                            ml: 1,
+                            ...getStatusStyle(participant.status),
+                          }}
+                        />
                       </Box>
-                    ))}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={() => handleUpdate(participant.id)}
+                    }
+                    secondary={`${new Date(
+                      participant.participationDate
+                    ).toLocaleDateString()} - ${participant.programPart}`}
+                  />
+                  <ListItemSecondaryAction>
+                    <IconButton
+                      onClick={() => handleExpandToggle(participant.id)}
                     >
-                      Salvar Alterações
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="secondary"
-                      onClick={() => handleDelete(participant.id)}
-                      sx={{ mt: 1 }}
-                    >
-                      Deletar
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    {/* Ícones e mensagens de status */}
-                    {participant.isMember ? (
-                      <Tooltip title="É membro da IASD">
-                        <CheckCircleIcon color="success" />
-                      </Tooltip>
-                    ) : participant.allowedImage ? (
-                      <Tooltip title="Direito de uso de imagem concedido">
-                        <CheckCircleIcon color="success" />
-                      </Tooltip>
-                    ) : (
-                      <Tooltip title="Não é membro nem permitiu imagem">
-                        <WarningIcon color="error" />
-                      </Tooltip>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                      {expanded === participant.id ? (
+                        <ExpandLessIcon />
+                      ) : (
+                        <ExpandMoreIcon />
+                      )}
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </ListItem>
+                <Collapse
+                  in={expanded === participant.id}
+                  timeout="auto"
+                  unmountOnExit
+                >
+                  <Box p={2} border={1} borderRadius={4} mb={2}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Informações Gerais
+                    </Typography>
+                    <Divider />
+                    <Box mt={2}>
+                      <Typography>Grupo/Igreja: {participant.group}</Typography>
+                      <Typography>
+                        Telefone:{" "}
+                        {participant.phone
+                          ? formatPhoneNumber(participant.phone)
+                          : "N/A"}{" "}
+                        {participant.isWhatsApp && participant.phone && (
+                          <IconButton
+                            href={`https://wa.me/55${participant.phone.replace(
+                              /\D/g,
+                              ""
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="WhatsApp"
+                          >
+                            <WhatsAppIcon color="success" />
+                          </IconButton>
+                        )}
+                      </Typography>
+                      <Typography>
+                        Tipo de Apresentação: {participant.performanceType}
+                      </Typography>
+                      {participant.performanceType === "Conjunto/Quarteto" && (
+                        <Typography>
+                          Quantidade de Microfones:{" "}
+                          {participant.microphoneCount}
+                        </Typography>
+                      )}
+                    </Box>
+                    <Box mt={2}>
+                      <Typography variant="subtitle1" gutterBottom>
+                        Status
+                      </Typography>
+                      <Divider />
+                      {editMode[participant.id] ? (
+                        <FormControl fullWidth>
+                          <Select
+                            value={
+                              statusUpdate[participant.id] || participant.status
+                            }
+                            onChange={(e) =>
+                              setStatusUpdate({
+                                ...statusUpdate,
+                                [participant.id]: e.target.value,
+                              })
+                            }
+                          >
+                            <MenuItem value="Pendente">Pendente</MenuItem>
+                            <MenuItem value="Aprovado">Aprovado</MenuItem>
+                            <MenuItem value="Recusado">Recusado</MenuItem>
+                          </Select>
+                        </FormControl>
+                      ) : (
+                        <Typography
+                          sx={{
+                            ...getStatusStyle(participant.status),
+                            padding: "4px",
+                            borderRadius: "4px",
+                            display: "inline-block",
+                            mt: 1,
+                          }}
+                        >
+                          {participant.status}
+                        </Typography>
+                      )}
+                    </Box>
+                    <Box mt={2}>
+                      <Typography variant="subtitle1" gutterBottom>
+                        Observações
+                      </Typography>
+                      <Divider />
+                      {editMode[participant.id] ? (
+                        <TextField
+                          value={
+                            observationsUpdate[participant.id] ||
+                            participant.observations
+                          }
+                          onChange={(e) =>
+                            setObservationsUpdate({
+                              ...observationsUpdate,
+                              [participant.id]: e.target.value,
+                            })
+                          }
+                          multiline
+                          rows={3}
+                          variant="outlined"
+                          fullWidth
+                        />
+                      ) : (
+                        <Typography>{participant.observations}</Typography>
+                      )}
+                    </Box>
+                    <Box mt={2}>
+                      {editMode[participant.id] ? (
+                        <>
+                          <IconButton
+                            onClick={() => handleUpdate(participant.id)}
+                            color="primary"
+                          >
+                            <SaveIcon />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => handleEditToggle(participant.id)}
+                            color="secondary"
+                          >
+                            <CancelIcon />
+                          </IconButton>
+                        </>
+                      ) : (
+                        <IconButton
+                          onClick={() => handleEditToggle(participant.id)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      )}
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={() => handleDelete(participant.id)}
+                        sx={{ ml: 1 }}
+                      >
+                        Deletar
+                      </Button>
+                    </Box>
+                    <Box mt={2}>
+                      <Typography variant="subtitle1" gutterBottom>
+                        Arquivos
+                      </Typography>
+                      <Divider />
+                      <Box mt={1}>
+                        {participant.files.map((file) => (
+                          <Box key={file.id} mb={1}>
+                            <a
+                              href={file.driveLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {file.filename}
+                            </a>
+                          </Box>
+                        ))}
+                      </Box>
+                    </Box>
+                    <Typography mt={2}>
+                      {participant.isMember ? (
+                        <Tooltip title="É membro da IASD">
+                          <CheckCircleIcon color="success" />
+                        </Tooltip>
+                      ) : participant.allowedImage ? (
+                        <Tooltip title="Direito de uso de imagem concedido">
+                          <CheckCircleIcon color="success" />
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title="Não é membro nem permitiu imagem">
+                          <WarningIcon color="error" />
+                        </Tooltip>
+                      )}
+                    </Typography>
+                  </Box>
+                </Collapse>
+              </List>
+            </Grid>
+          ))}
+        </Grid>
       </Container>
       <CustomSnackbar {...snackbarProps} />
     </ProtectedRoute>

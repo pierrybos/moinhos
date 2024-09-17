@@ -17,7 +17,7 @@ export async function GET() {
                 files: true,
             },
         });
-        console.log('biscando');
+        console.log('buscando');
         console.log(participants)
         
         const response = NextResponse.json({ participants });
