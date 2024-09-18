@@ -26,6 +26,7 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 import MaskedInput from "react-text-mask";
 import CustomSnackbar from "../components/CustomSnackbar"; // ajuste o caminho conforme necessário
 import { useSnackbar } from "../components/useSnackbar"; // ajuste o caminho conforme necessário
+import { SelectChangeEvent } from "@mui/material";
 
 // Importando o módulo com as extensões permitidas
 import { getAllExtensions } from "../../utils/fileExtensions"; // ajuste o caminho conforme sua estrutura de pastas
@@ -51,9 +52,7 @@ const FormPage = () => {
   const [microphoneCount, setMicrophoneCount] = useState<number>(1); // Valor inicial do slider
 
   // Função para manipular mudanças no tipo de apresentação
-  const handlePerformanceTypeChange = (
-    e: React.ChangeEvent<{ value: unknown }>
-  ) => {
+  const handlePerformanceTypeChange = (e: SelectChangeEvent<string>) => {
     const value = e.target.value as string;
     setPerformanceType(value);
 
@@ -114,7 +113,7 @@ const FormPage = () => {
       fetchToken();
       fetchProgramParts();
     }
-  }, []);
+  }, [openSnackbar]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {

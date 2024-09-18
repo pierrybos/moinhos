@@ -8,7 +8,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction,
   IconButton,
   Collapse,
   Box,
@@ -88,7 +87,7 @@ const AdminPanel = () => {
 
       fetchParticipants();
     }
-  }, [session]);
+  }, [session, openSnackbar]);
 
   const handleUpdate = async (id: number) => {
     const newStatus = statusUpdate[id];
@@ -188,8 +187,12 @@ const AdminPanel = () => {
             <Grid item xs={12} sm={6} md={4} key={participant.id}>
               <List>
                 <ListItem
-                  button
                   onClick={() => handleExpandToggle(participant.id)}
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between", // Garante que os elementos fiquem separados
+                    alignItems: "center", // Alinha os itens ao centro
+                  }}
                 >
                   <ListItemText
                     primary={
@@ -211,17 +214,15 @@ const AdminPanel = () => {
                       participant.participationDate
                     ).toLocaleDateString()} - ${participant.programPart}`}
                   />
-                  <ListItemSecondaryAction>
-                    <IconButton
-                      onClick={() => handleExpandToggle(participant.id)}
-                    >
-                      {expanded === participant.id ? (
-                        <ExpandLessIcon />
-                      ) : (
-                        <ExpandMoreIcon />
-                      )}
-                    </IconButton>
-                  </ListItemSecondaryAction>
+                  <IconButton
+                    onClick={() => handleExpandToggle(participant.id)}
+                  >
+                    {expanded === participant.id ? (
+                      <ExpandLessIcon />
+                    ) : (
+                      <ExpandMoreIcon />
+                    )}
+                  </IconButton>
                 </ListItem>
                 <Collapse
                   in={expanded === participant.id}
