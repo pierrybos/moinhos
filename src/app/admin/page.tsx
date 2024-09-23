@@ -46,8 +46,10 @@ type Participant = {
   isWhatsApp?: boolean;
   isMember?: boolean;
   allowedImage?: boolean;
-  performanceType: string; // Novo campo
-  microphoneCount?: number; // Novo campo
+  performanceType: string;
+  microphoneCount?: number;
+  userPhoto?: string; // Novo campo para o link da foto do usuário
+  bibleVersion?: string; // Novo campo para a versão da Bíblia
   files: {
     id: number;
     filename: string;
@@ -56,9 +58,7 @@ type Participant = {
 };
 
 const formatPhoneNumber = (phone: string) => {
-  // Remove todos os caracteres não numéricos
   const cleaned = phone.replace(/\D/g, "");
-  // Formata o número no formato desejado
   return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
 };
 
@@ -190,8 +190,8 @@ const AdminPanel = () => {
                   onClick={() => handleExpandToggle(participant.id)}
                   sx={{
                     display: "flex",
-                    justifyContent: "space-between", // Garante que os elementos fiquem separados
-                    alignItems: "center", // Alinha os itens ao centro
+                    justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
                   <ListItemText
@@ -264,6 +264,42 @@ const AdminPanel = () => {
                           {participant.microphoneCount}
                         </Typography>
                       )}
+                    </Box>
+                    <Box mt={2}>
+                      {/* Exibe a foto do usuário, se existir */}
+                      {participant.userPhoto && (
+                        <Box mt={2}>
+                          <Typography variant="subtitle1" gutterBottom>
+                            Foto do Participante
+                          </Typography>
+                          <Divider />
+                          <Box mt={1}>
+                            <img
+                              src={participant.userPhoto}
+                              alt="Foto do participante"
+                              style={{
+                                width: "100%",
+                                maxHeight: "200px",
+                                borderRadius: "8px",
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+
+                      {/* Exibe a versão da Bíblia, se existir */}
+                      {participant.programPart === "Sermão" &&
+                        participant.bibleVersion && (
+                          <Box mt={2}>
+                            <Typography variant="subtitle1" gutterBottom>
+                              Versão da Bíblia
+                            </Typography>
+                            <Divider />
+                            <Typography mt={1}>
+                              {participant.bibleVersion}
+                            </Typography>
+                          </Box>
+                        )}
                     </Box>
                     <Box mt={2}>
                       <Typography variant="subtitle1" gutterBottom>

@@ -21,8 +21,10 @@ export async function POST(req: Request) {
             files,
             imageRightsGranted,
             isMember,
-            performanceType,  // Novo campo
-            microphoneCount,  // Novo campo
+            performanceType, // Novo campo
+            microphoneCount, // Novo campo
+            userPhoto, // Novo campo para link da foto do usuário
+            bibleVersion, // Novo campo para versão da Bíblia
         } = data;
         
         // Salvar o participante no banco de dados com status "Pendente"
@@ -38,14 +40,18 @@ export async function POST(req: Request) {
                 status: "Pendente",
                 isMember,
                 imageRightsGranted: imageRightsGranted || isMember,
-                performanceType,  // Armazenando o tipo de apresentação
-                microphoneCount,  // Armazenando a quantidade de microfones, pode ser null se não aplicável
+                performanceType, // Armazenando o tipo de apresentação
+                microphoneCount, // Armazenando a quantidade de microfones
+                userPhoto, // Armazenando o link da foto do usuário
+                bibleVersion, // Armazenando a versão da Bíblia (se aplicável)
             },
         });
         
         // Salvar os metadados dos arquivos associados ao participante
         for (const file of files) {
-            const fileExtension = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
+            const fileExtension = file.name
+            .slice(file.name.lastIndexOf("."))
+            .toLowerCase();
             if (!allowedExtensions.includes(fileExtension)) {
                 return NextResponse.json(
                     { error: `Arquivo com extensão ${fileExtension} não é permitido.` },

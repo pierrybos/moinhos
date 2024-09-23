@@ -21,12 +21,14 @@ import {
   Checkbox,
   FormControlLabel,
   Slider,
+  IconButton,
 } from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import MaskedInput from "react-text-mask";
 import CustomSnackbar from "../components/CustomSnackbar"; // ajuste o caminho conforme necessário
 import { useSnackbar } from "../components/useSnackbar"; // ajuste o caminho conforme necessário
 import { SelectChangeEvent } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 // Importando o módulo com as extensões permitidas
 import { getAllExtensions } from "../../utils/fileExtensions"; // ajuste o caminho conforme sua estrutura de pastas
@@ -45,6 +47,9 @@ const FormPage = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [imageRightsGranted, setImageRightsGranted] = useState(false);
   const [isMember, setIsMember] = useState(false);
+  const [userPhoto, setUserPhoto] = useState<File | null>(null); // Estado para foto do usuário
+  const [userPhotoPreview, setUserPhotoPreview] = useState<string | null>(null); // URL de pré-visualização
+  const [bibleVersion, setBibleVersion] = useState<string>(""); // Estado para versão da Bíblia
   const { openSnackbar, snackbarProps } = useSnackbar();
 
   // Novos estados para o tipo de apresentação e microfones
@@ -78,6 +83,25 @@ const FormPage = () => {
     } else {
       setImageRightsGranted(false);
     }
+  };
+
+  const handleUserPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setUserPhoto(file);
+
+      // Gerar uma URL de pré-visualização da imagem
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUserPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveUserPhoto = () => {
+    setUserPhoto(null);
+    setUserPhotoPreview(null);
   };
 
   useEffect(() => {
@@ -121,6 +145,62 @@ const FormPage = () => {
     }
   };
 
+  // Função para manipular mudanças na parte do programa
+  const handleProgramPartChange = (e: SelectChangeEvent<string>) => {
+    const value = e.target.value;
+    setProgramPart(value);
+
+    // Se a parte do programa for "Sermão", definimos automaticamente o tipo de apresentação e o número de microfones
+    if (value === "Sermão") {
+      setPerformanceType("Solo");
+      setMicrophoneCount(1);
+    } else {
+      // Reseta o campo se não for "Sermão"
+      setPerformanceType("");
+      setMicrophoneCount(1);
+    }
+  };
+
+  const findFolder = async (name: string, parentId: string | undefined) => {
+    if (!accessToken) {
+      throw new Error("Access token not available");
+    }
+
+    const query = `name='${name}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`;
+    const response = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
+        query
+      )}&fields=files(id,name)`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+    if (data.files && data.files.length > 0) {
+      return data.files[0].id; // Retorna o ID da pasta existente
+    }
+    return null; // Retorna null se a pasta não for encontrada
+  };
+
+  // Função para criar uma pasta ou retornar o ID de uma existente
+  const getOrCreateFolder = async (
+    name: string,
+    parentId: string | undefined
+  ) => {
+    let folderId = await findFolder(name, parentId);
+
+    if (!folderId) {
+      // Se a pasta não existe, cria uma nova
+      folderId = await createFolder(name, parentId);
+    }
+
+    return folderId;
+  };
   const createFolder = async (name: string, parentId: string | undefined) => {
     if (!accessToken) {
       throw new Error("Access token not available");
@@ -204,30 +284,39 @@ const FormPage = () => {
       }
 
       const date = new Date(participationDate);
-      const yearFolderId = await createFolder(
+      const yearFolderId = await getOrCreateFolder(
         date.getFullYear().toString(),
         process.env.NEXT_PUBLIC_SHARED_DRIVE_ID
       );
-      const monthFolderId = await createFolder(
+      const monthFolderId = await getOrCreateFolder(
         (date.getMonth() + 1).toString().padStart(2, "0"),
         yearFolderId
       );
-      const dayFolderId = await createFolder(
+      const dayFolderId = await getOrCreateFolder(
         date.getDate().toString().padStart(2, "0"),
         monthFolderId
       );
       const programFolderId = await createFolder(programPart, dayFolderId);
 
+      const fileFolderId = await createFolder("arquivos", programFolderId);
+      const userPhotoFolderId = await createFolder("foto", programFolderId);
+
+      let userPhotoLink = "";
       // Fazer o upload dos arquivos para o Google Drive e coletar metadados
       const uploadedFiles = await Promise.all(
         files.map(async (file) => {
-          const link = await uploadFile(file, programFolderId);
+          const link = await uploadFile(file, fileFolderId);
           return {
             name: file.name,
             link, // Link obtido do Google Drive
           };
         })
       );
+
+      // Fazer upload da foto do usuário se existir
+      if (userPhoto) {
+        userPhotoLink = await uploadFile(userPhoto, userPhotoFolderId);
+      }
 
       // Montar o payload com as informações do participante e dos arquivos
       const payload = {
@@ -243,6 +332,8 @@ const FormPage = () => {
         isMember,
         performanceType,
         microphoneCount,
+        userPhoto: userPhotoLink, // Link da foto do usuário
+        bibleVersion, // Versão da Bíblia selecionada
       };
 
       await fetch("/api/saveParticipant", {
@@ -263,6 +354,11 @@ const FormPage = () => {
       setPhone("");
       setIsWhatsApp(false);
       setObservations("");
+      setPerformanceType("");
+      setMicrophoneCount(1);
+      setUserPhoto(null); // Resetar a foto do usuário
+      setUserPhotoPreview(null); // Resetar a pré-visualização
+      setBibleVersion(""); // Resetar a versão da Bíblia
     } catch (error) {
       console.error("Erro durante o upload:", error);
       openSnackbar("Erro inesperado durante o upload.", "error");
@@ -347,6 +443,126 @@ const FormPage = () => {
           }}
         />
 
+        <FormControl
+          fullWidth
+          required
+          margin="normal"
+          sx={{
+            "& .MuiInputBase-input": {
+              color: "text.primary",
+            },
+            "& .MuiInputLabel-root": {
+              color: "text.secondary",
+            },
+          }}
+        >
+          <InputLabel>Parte do Programa</InputLabel>
+          <Select
+            value={programPart}
+            onChange={handleProgramPartChange}
+            label="Parte do Programa"
+          >
+            <MenuItem value="">
+              <em>Selecione</em>
+            </MenuItem>
+            {programParts.map((part: { id: number; name: string }) => (
+              <MenuItem key={part.id} value={part.name}>
+                {part.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <FormControl
+          fullWidth
+          required
+          margin="normal"
+          sx={{
+            "& .MuiInputBase-input": {
+              color: "text.primary",
+            },
+            "& .MuiInputLabel-root": {
+              color: "text.secondary",
+            },
+          }}
+        >
+          <InputLabel>Tipo de Participação</InputLabel>
+          <Select
+            value={performanceType}
+            onChange={handlePerformanceTypeChange}
+            label="Tipo de Participação"
+          >
+            <MenuItem value="Solo">Solo</MenuItem>
+            <MenuItem value="Conjunto/Quarteto">Conjunto/Quarteto</MenuItem>
+            <MenuItem value="Coral">Coral</MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl
+          fullWidth
+          required
+          margin="normal"
+          sx={{
+            "& .MuiInputBase-input": {
+              color: "text.primary",
+            },
+            "& .MuiInputLabel-root": {
+              color: "text.secondary",
+            },
+          }}
+        >
+          <Typography gutterBottom>
+            Número de Microfones Necessários: {microphoneCount}
+          </Typography>
+          <Slider
+            value={microphoneCount}
+            onChange={(e, newValue) => setMicrophoneCount(newValue as number)}
+            valueLabelDisplay="auto"
+            step={1}
+            marks
+            min={1}
+            max={6}
+            disabled={performanceType === "Solo"} // Desabilita o campo se for Solo
+            aria-labelledby="microphone-slider"
+          />
+        </FormControl>
+
+        {/* Campo de seleção de versão da Bíblia, exibido apenas quando programPart for "Sermão" */}
+        {programPart === "Sermão" && (
+          <FormControl
+            fullWidth
+            margin="normal"
+            sx={{
+              "& .MuiInputBase-input": {
+                color: "text.primary",
+              },
+              "& .MuiInputLabel-root": {
+                color: "text.secondary",
+              },
+            }}
+          >
+            <InputLabel>Versão da Bíblia</InputLabel>
+            <Select
+              value={bibleVersion}
+              onChange={(e) => setBibleVersion(e.target.value)}
+              label="Versão da Bíblia"
+            >
+              <MenuItem value="ACF">ACF - Almeida Corrigida Fiel</MenuItem>
+              <MenuItem value="ARA">ARA - Almeida Revista Atualizada</MenuItem>
+              <MenuItem value="ARC">ARC - Almeida Revista Corrigida</MenuItem>
+              <MenuItem value="A21">A21 - Almeida Século 21</MenuItem>
+              <MenuItem value="KJA">KJA - King James Atualizada</MenuItem>
+              <MenuItem value="NAA">NAA - Nova Almeida Atualizada</MenuItem>
+              <MenuItem value="NBV">NBV - Nova Bíblia Viva</MenuItem>
+              <MenuItem value="NVI">NVI - Nova Versão Internacional</MenuItem>
+              <MenuItem value="NVT">NVT - Nova Versão Transformadora</MenuItem>
+              <MenuItem value="NTLH">
+                NTLH - Nova Tradução na Linguagem de Hoje
+              </MenuItem>
+            </Select>
+          </FormControl>
+        )}
+
         <FormControl fullWidth margin="normal">
           <InputLabel>Telefone</InputLabel>
           <MaskedInput
@@ -410,9 +626,9 @@ const FormPage = () => {
           }}
         />
 
+        {/* Campo para Upload da Foto do Participante */}
         <FormControl
           fullWidth
-          required
           margin="normal"
           sx={{
             "& .MuiInputBase-input": {
@@ -423,74 +639,42 @@ const FormPage = () => {
             },
           }}
         >
-          <InputLabel>Tipo de Apresentação</InputLabel>
-          <Select
-            value={performanceType}
-            onChange={handlePerformanceTypeChange}
-            label="Tipo de Apresentação"
-          >
-            <MenuItem value="Solo">Solo</MenuItem>
-            <MenuItem value="Conjunto/Quarteto">Conjunto/Quarteto</MenuItem>
-            <MenuItem value="Coral">Coral</MenuItem>
-          </Select>
-        </FormControl>
-
-        <FormControl
-          fullWidth
-          required
-          margin="normal"
-          sx={{
-            "& .MuiInputBase-input": {
-              color: "text.primary",
-            },
-            "& .MuiInputLabel-root": {
-              color: "text.secondary",
-            },
-          }}
-        >
-          <Typography gutterBottom>
-            Número de Microfones Necessários: {microphoneCount}
-          </Typography>
-          <Slider
-            value={microphoneCount}
-            onChange={(e, newValue) => setMicrophoneCount(newValue as number)}
-            valueLabelDisplay="auto"
-            step={1}
-            marks
-            min={1}
-            max={6}
-            disabled={performanceType === "Solo"} // Desabilita o campo se for Solo
-            aria-labelledby="microphone-slider"
+          <Typography gutterBottom>Upload da Foto do Participante</Typography>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleUserPhotoChange}
+            style={{ display: "none" }}
+            id="upload-user-photo"
           />
-        </FormControl>
-        <FormControl
-          fullWidth
-          required
-          margin="normal"
-          sx={{
-            "& .MuiInputBase-input": {
-              color: "text.primary",
-            },
-            "& .MuiInputLabel-root": {
-              color: "text.secondary",
-            },
-          }}
-        >
-          <InputLabel>Parte do Programa</InputLabel>
-          <Select
-            value={programPart}
-            onChange={(e) => setProgramPart(e.target.value)}
-            label="Parte do Programa"
-          >
-            <MenuItem value="">
-              <em>Selecione</em>
-            </MenuItem>
-            {programParts.map((part: { id: number; name: string }) => (
-              <MenuItem key={part.id} value={part.name}>
-                {part.name}
-              </MenuItem>
-            ))}
-          </Select>
+          <label htmlFor="upload-user-photo">
+            <Button variant="contained" component="span">
+              Selecionar Foto
+            </Button>
+            <FormHelperText sx={{ color: "text.secondary" }}>
+              Envie uma foto do participante.
+            </FormHelperText>
+          </label>
+          {/* Visualização da miniatura da imagem selecionada */}
+          {userPhotoPreview && (
+            <Box mt={2} display="flex" alignItems="center">
+              <img
+                src={userPhotoPreview}
+                alt="Pré-visualização da Foto"
+                style={{
+                  width: 100,
+                  height: 100,
+                  objectFit: "cover",
+                  borderRadius: "50%",
+                  border: "1px solid #ccc",
+                  marginRight: 16,
+                }}
+              />
+              <IconButton onClick={handleRemoveUserPhoto} color="error">
+                <DeleteIcon />
+              </IconButton>
+            </Box>
+          )}
         </FormControl>
 
         <Box margin="normal">

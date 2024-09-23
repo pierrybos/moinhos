@@ -30,7 +30,10 @@ model Participant {
   isMember            Boolean    @default(false) // Campo para indicar se é membro da IASD
   performanceType     String     @default("Solo") // Campo para armazenar o tipo de apresentação (Solo, Conjunto/Quarteto, Coral)
   microphoneCount     Int        @default(1) // Campo opcional para o número de microfones necessários
+  userPhoto           String?    // Campo para armazenar o link da foto do usuário
+  bibleVersion        String?    // Campo opcional para armazenar a versão da Bíblia selecionada
 }
+
 
 
 model ProgramPart {
