@@ -29,9 +29,7 @@ import CustomSnackbar from "../components/CustomSnackbar"; // ajuste o caminho c
 import { useSnackbar } from "../components/useSnackbar"; // ajuste o caminho conforme necessário
 import { SelectChangeEvent } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
-
-// Importando o módulo com as extensões permitidas
-import { getAllExtensions } from "../../utils/fileExtensions"; // ajuste o caminho conforme sua estrutura de pastas
+import { getAllExtensions } from "../../utils/fileExtensions"; // ajuste o caminho conforme necessário
 
 const FormPage = () => {
   const [participantName, setParticipantName] = useState("");
@@ -47,27 +45,83 @@ const FormPage = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [imageRightsGranted, setImageRightsGranted] = useState(false);
   const [isMember, setIsMember] = useState(false);
-  const [userPhoto, setUserPhoto] = useState<File | null>(null); // Estado para foto do usuário
-  const [userPhotoPreview, setUserPhotoPreview] = useState<string | null>(null); // URL de pré-visualização
-  const [bibleVersion, setBibleVersion] = useState<string>(""); // Estado para versão da Bíblia
+  const [userPhoto, setUserPhoto] = useState<File | null>(null);
+  const [userPhotoPreview, setUserPhotoPreview] = useState<string | null>(null);
+  const [bibleVersion, setBibleVersion] = useState<string>("");
+
   const { openSnackbar, snackbarProps } = useSnackbar();
-
-  // Novos estados para o tipo de apresentação e microfones
   const [performanceType, setPerformanceType] = useState("");
-  const [microphoneCount, setMicrophoneCount] = useState<number>(1); // Valor inicial do slider
+  const [microphoneCount, setMicrophoneCount] = useState<number>(1);
+  const extensionList = getAllExtensions().join(",");
 
-  // Função para manipular mudanças no tipo de apresentação
+  // Busca campos de participação e token apenas uma vez
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Busca token se não estiver disponível ou se estiver expirado
+        if (!accessToken || isTokenExpired()) {
+          const newToken = await fetchToken();
+          setAccessToken(newToken);
+        }
+
+        // Busca campos de participação apenas uma vez
+        if (programParts.length === 0) {
+          const parts = await fetchProgramParts();
+          setProgramParts(parts);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar dados iniciais:", error);
+        openSnackbar(
+          "Erro ao carregar dados. Por favor, tente novamente.",
+          "warning"
+        );
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const isTokenExpired = () => {
+    const tokenExpiry = localStorage.getItem("tokenExpiry");
+    return !tokenExpiry || new Date().getTime() > parseInt(tokenExpiry);
+  };
+
+  const fetchToken = async () => {
+    try {
+      const response = await fetch("/api/getAccessToken");
+      const data = await response.json();
+
+      if (data.accessToken) {
+        localStorage.setItem(
+          "tokenExpiry",
+          (new Date().getTime() + 3600 * 1000).toString()
+        ); // Armazenar tempo de expiração (1 hora)
+        return data.accessToken;
+      } else {
+        throw new Error("Failed to retrieve access token");
+      }
+    } catch (error) {
+      openSnackbar(
+        "Erro ao obter o token de acesso. Por favor, tente novamente.",
+        "warning"
+      );
+    }
+  };
+
+  const fetchProgramParts = async () => {
+    const response = await fetch("/api/program-parts");
+    const data = await response.json();
+    return data;
+  };
+
   const handlePerformanceTypeChange = (e: SelectChangeEvent<string>) => {
     const value = e.target.value as string;
     setPerformanceType(value);
 
-    // Reseta o número de microfones se for "Solo"
     if (value === "Solo") {
       setMicrophoneCount(1);
     }
   };
-
-  const extensionList = getAllExtensions().join(",");
 
   const handleImageRightsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageRightsGranted(e.target.checked);
@@ -77,7 +131,6 @@ const FormPage = () => {
     const isChecked = e.target.checked;
     setIsMember(isChecked);
 
-    // Se for membro, direito de imagem é automaticamente concedido
     if (isChecked) {
       setImageRightsGranted(true);
     } else {
@@ -90,7 +143,6 @@ const FormPage = () => {
       const file = e.target.files[0];
       setUserPhoto(file);
 
-      // Gerar uma URL de pré-visualização da imagem
       const reader = new FileReader();
       reader.onloadend = () => {
         setUserPhotoPreview(reader.result as string);
@@ -103,41 +155,6 @@ const FormPage = () => {
     setUserPhoto(null);
     setUserPhotoPreview(null);
   };
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const fetchToken = async () => {
-        try {
-          const response = await fetch("/api/getAccessToken");
-          const data = await response.json();
-
-          if (data.accessToken) {
-            setAccessToken(data.accessToken);
-          } else {
-            throw new Error("Failed to retrieve access token");
-          }
-        } catch (error) {
-          openSnackbar(
-            "Erro ao obter o token de acesso. Por favor, tente novamente.",
-            "warning"
-          );
-        }
-      };
-
-      const fetchProgramParts = async () => {
-        try {
-          const response = await fetch("/api/program-parts");
-          const data = await response.json();
-          setProgramParts(data);
-        } catch (error) {
-          console.error("Erro ao carregar as partes do programa:", error);
-        }
-      };
-
-      fetchToken();
-      fetchProgramParts();
-    }
-  }, [openSnackbar]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -182,9 +199,9 @@ const FormPage = () => {
 
     const data = await response.json();
     if (data.files && data.files.length > 0) {
-      return data.files[0].id; // Retorna o ID da pasta existente
+      return data.files[0].id;
     }
-    return null; // Retorna null se a pasta não for encontrada
+    return null;
   };
 
   // Função para criar uma pasta ou retornar o ID de uma existente
@@ -258,7 +275,6 @@ const FormPage = () => {
         "Você deve conceder o direito de imagem ou ser membro da IASD para continuar.",
         "warning"
       );
-
       return;
     }
 
@@ -278,7 +294,7 @@ const FormPage = () => {
     setIsSubmitting(true);
 
     try {
-      const cleanedPhone = phone.replace(/\D/g, "");
+      let cleanedPhone = phone.replace(/\D/g, "");
       if (!accessToken) {
         throw new Error("Token de acesso não está disponível.");
       }
@@ -302,23 +318,20 @@ const FormPage = () => {
       const userPhotoFolderId = await createFolder("foto", programFolderId);
 
       let userPhotoLink = "";
-      // Fazer o upload dos arquivos para o Google Drive e coletar metadados
       const uploadedFiles = await Promise.all(
         files.map(async (file) => {
           const link = await uploadFile(file, fileFolderId);
           return {
             name: file.name,
-            link, // Link obtido do Google Drive
+            link,
           };
         })
       );
 
-      // Fazer upload da foto do usuário se existir
       if (userPhoto) {
         userPhotoLink = await uploadFile(userPhoto, userPhotoFolderId);
       }
 
-      // Montar o payload com as informações do participante e dos arquivos
       const payload = {
         participantName,
         churchGroupState,
@@ -332,8 +345,8 @@ const FormPage = () => {
         isMember,
         performanceType,
         microphoneCount,
-        userPhoto: userPhotoLink, // Link da foto do usuário
-        bibleVersion, // Versão da Bíblia selecionada
+        userPhoto: userPhotoLink,
+        bibleVersion,
       };
 
       await fetch("/api/saveParticipant", {
@@ -345,7 +358,6 @@ const FormPage = () => {
       });
 
       openSnackbar("Dados salvos com sucesso!", "success");
-      // Resetar o formulário
       setFiles([]);
       setParticipantName("");
       setChurchGroupState("");
@@ -655,7 +667,6 @@ const FormPage = () => {
               Envie uma foto do participante.
             </FormHelperText>
           </label>
-          {/* Visualização da miniatura da imagem selecionada */}
           {userPhotoPreview && (
             <Box mt={2} display="flex" alignItems="center">
               <img
@@ -749,7 +760,6 @@ const FormPage = () => {
           }}
         />
 
-        {/* Checkbox de direito de imagem que é desabilitado quando for membro */}
         <FormControlLabel
           control={
             <Checkbox
