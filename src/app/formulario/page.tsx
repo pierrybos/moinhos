@@ -23,6 +23,7 @@ import {
   Slider,
   IconButton,
 } from "@mui/material";
+import Image from "next/image";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import MaskedInput from "react-text-mask";
 import CustomSnackbar from "../components/CustomSnackbar"; // ajuste o caminho conforme necessário
@@ -294,7 +295,7 @@ const FormPage = () => {
     setIsSubmitting(true);
 
     try {
-      let cleanedPhone = phone.replace(/\D/g, "");
+      const cleanedPhone = phone.replace(/\D/g, "");
       if (!accessToken) {
         throw new Error("Token de acesso não está disponível.");
       }
@@ -669,12 +670,12 @@ const FormPage = () => {
           </label>
           {userPhotoPreview && (
             <Box mt={2} display="flex" alignItems="center">
-              <img
-                src={userPhotoPreview}
+              <Image
+                src={userPhotoPreview} // URL da imagem
                 alt="Pré-visualização da Foto"
+                width={100} // Largura da imagem
+                height={100} // Altura da imagem
                 style={{
-                  width: 100,
-                  height: 100,
                   objectFit: "cover",
                   borderRadius: "50%",
                   border: "1px solid #ccc",
