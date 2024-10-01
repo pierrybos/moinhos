@@ -241,31 +241,40 @@ const FormPage = () => {
   };
 
   const uploadFile = async (file: File, folderId: string) => {
-    if (!accessToken) {
-      throw new Error("Access token not available");
-    }
-    const metadata = {
-      name: file.name,
-      mimeType: file.type,
-      parents: [folderId],
-    };
-    const form = new FormData();
-    form.append(
-      "metadata",
-      new Blob([JSON.stringify(metadata)], { type: "application/json" })
-    );
-    form.append("file", file);
-
-    const response = await fetch(
-      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink",
-      {
-        method: "POST",
-        headers: new Headers({ Authorization: `Bearer ${accessToken}` }),
-        body: form,
+    try {
+      if (!accessToken) {
+        throw new Error("Access token not available");
       }
-    );
-    const data = await response.json();
-    return data.webViewLink; // Retorna o link do arquivo no Google Drive
+      const metadata = {
+        name: file.name,
+        mimeType: file.type,
+        parents: [folderId],
+      };
+      const form = new FormData();
+      form.append(
+        "metadata",
+        new Blob([JSON.stringify(metadata)], { type: "application/json" })
+      );
+      form.append("file", file);
+
+      const response = await fetch(
+        "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink",
+        {
+          method: "POST",
+          headers: new Headers({ Authorization: `Bearer ${accessToken}` }),
+          body: form,
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`Upload failed for ${file.name}`);
+      }
+
+      const data = await response.json();
+      return data.webViewLink; // Retorna o link do arquivo no Google Drive
+    } catch (error) {
+      console.error("Erro no upload do arquivo:", error);
+      throw error;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -321,11 +330,15 @@ const FormPage = () => {
       let userPhotoLink = "";
       const uploadedFiles = await Promise.all(
         files.map(async (file) => {
-          const link = await uploadFile(file, fileFolderId);
-          return {
-            name: file.name,
-            link,
-          };
+          try {
+            const link = await uploadFile(file, fileFolderId);
+            return {
+              name: file.name,
+              link,
+            };
+          } catch (error) {
+            throw new Error(`Erro no upload do arquivo: ${file.name}`);
+          }
         })
       );
 
