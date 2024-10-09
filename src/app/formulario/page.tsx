@@ -55,21 +55,11 @@ const FormPage = () => {
   const [microphoneCount, setMicrophoneCount] = useState<number>(1);
   const extensionList = getAllExtensions().join(",");
 
-  // Busca campos de participação e token apenas uma vez
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Busca token se não estiver disponível ou se estiver expirado
-        if (!accessToken || isTokenExpired()) {
-          const newToken = await fetchToken();
-          setAccessToken(newToken);
-        }
-
-        // Busca campos de participação apenas uma vez
-        if (programParts.length === 0) {
-          const parts = await fetchProgramParts();
-          setProgramParts(parts);
-        }
+        const parts = await fetchProgramParts();
+        setProgramParts(parts);
       } catch (error) {
         console.error("Erro ao buscar dados iniciais:", error);
         openSnackbar(
@@ -82,21 +72,24 @@ const FormPage = () => {
     fetchData();
   }, []);
 
+  // Verifica se o token expirou
   const isTokenExpired = () => {
     const tokenExpiry = localStorage.getItem("tokenExpiry");
     return !tokenExpiry || new Date().getTime() > parseInt(tokenExpiry);
   };
 
-  const fetchToken = async () => {
+  // Obtém um novo token de acesso
+  const fetchNewToken = async () => {
     try {
       const response = await fetch("/api/getAccessToken");
       const data = await response.json();
 
       if (data.accessToken) {
+        localStorage.setItem("accessToken", data.accessToken);
         localStorage.setItem(
           "tokenExpiry",
-          (new Date().getTime() + 3600 * 1000).toString()
-        ); // Armazenar tempo de expiração (1 hora)
+          (new Date().getTime() + 3600 * 1000).toString() // 1 hora de validade
+        );
         return data.accessToken;
       } else {
         throw new Error("Failed to retrieve access token");
@@ -107,6 +100,18 @@ const FormPage = () => {
         "warning"
       );
     }
+  };
+
+  // Obtém um token válido antes de fazer a requisição
+  const getValidAccessToken = async () => {
+    const accessToken = localStorage.getItem("accessToken");
+
+    if (!accessToken || isTokenExpired()) {
+      // Se o token expirou ou não existe, obtenha um novo
+      return await fetchNewToken();
+    }
+
+    return accessToken;
   };
 
   const fetchProgramParts = async () => {
@@ -180,9 +185,7 @@ const FormPage = () => {
   };
 
   const findFolder = async (name: string, parentId: string | undefined) => {
-    if (!accessToken) {
-      throw new Error("Access token not available");
-    }
+    const accessToken = await getValidAccessToken(); // Obtém um token válido
 
     const query = `name='${name}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`;
     const response = await fetch(
@@ -192,11 +195,15 @@ const FormPage = () => {
       {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`, // Usa o token válido
           "Content-Type": "application/json",
         },
       }
     );
+
+    if (!response.ok) {
+      throw new Error("Erro na requisição à API do Google Drive");
+    }
 
     const data = await response.json();
     if (data.files && data.files.length > 0) {
@@ -220,14 +227,14 @@ const FormPage = () => {
     return folderId;
   };
   const createFolder = async (name: string, parentId: string | undefined) => {
-    if (!accessToken) {
-      throw new Error("Access token not available");
-    }
+    const accessToken = await getValidAccessToken(); // Obtém um token válido
+
     const folderMetadata = {
       name,
       mimeType: "application/vnd.google-apps.folder",
       parents: parentId ? [parentId] : [],
     };
+
     const response = await fetch("https://www.googleapis.com/drive/v3/files", {
       method: "POST",
       headers: {
@@ -236,45 +243,41 @@ const FormPage = () => {
       },
       body: JSON.stringify(folderMetadata),
     });
+
     const data = await response.json();
     return data.id;
   };
 
   const uploadFile = async (file: File, folderId: string) => {
-    try {
-      if (!accessToken) {
-        throw new Error("Access token not available");
-      }
-      const metadata = {
-        name: file.name,
-        mimeType: file.type,
-        parents: [folderId],
-      };
-      const form = new FormData();
-      form.append(
-        "metadata",
-        new Blob([JSON.stringify(metadata)], { type: "application/json" })
-      );
-      form.append("file", file);
+    const accessToken = await getValidAccessToken(); // Obtém um token válido
 
-      const response = await fetch(
-        "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink",
-        {
-          method: "POST",
-          headers: new Headers({ Authorization: `Bearer ${accessToken}` }),
-          body: form,
-        }
-      );
-      if (!response.ok) {
-        throw new Error(`Upload failed for ${file.name}`);
-      }
+    const metadata = {
+      name: file.name,
+      mimeType: file.type,
+      parents: [folderId],
+    };
+    const form = new FormData();
+    form.append(
+      "metadata",
+      new Blob([JSON.stringify(metadata)], { type: "application/json" })
+    );
+    form.append("file", file);
 
-      const data = await response.json();
-      return data.webViewLink; // Retorna o link do arquivo no Google Drive
-    } catch (error) {
-      console.error("Erro no upload do arquivo:", error);
-      throw error;
+    const response = await fetch(
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink",
+      {
+        method: "POST",
+        headers: new Headers({ Authorization: `Bearer ${accessToken}` }),
+        body: form,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Upload failed for ${file.name}`);
     }
+
+    const data = await response.json();
+    return data.webViewLink; // Retorna o link do arquivo no Google Drive
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -342,6 +345,7 @@ const FormPage = () => {
         })
       );
 
+      let userPhotoLink = "";
       if (userPhoto) {
         userPhotoLink = await uploadFile(userPhoto, userPhotoFolderId);
       }
