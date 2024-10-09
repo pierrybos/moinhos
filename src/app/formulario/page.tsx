@@ -43,7 +43,6 @@ const FormPage = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [observations, setObservations] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [imageRightsGranted, setImageRightsGranted] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const [userPhoto, setUserPhoto] = useState<File | null>(null);
@@ -308,9 +307,6 @@ const FormPage = () => {
 
     try {
       const cleanedPhone = phone.replace(/\D/g, "");
-      if (!accessToken) {
-        throw new Error("Token de acesso não está disponível.");
-      }
 
       const date = new Date(participationDate);
       const yearFolderId = await getOrCreateFolder(
@@ -345,7 +341,6 @@ const FormPage = () => {
         })
       );
 
-      let userPhotoLink = "";
       if (userPhoto) {
         userPhotoLink = await uploadFile(userPhoto, userPhotoFolderId);
       }

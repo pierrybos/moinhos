@@ -2,8 +2,14 @@
 import { NextResponse } from "next/server";
 import { google } from "googleapis";
 
+// Verifica se as credenciais estão disponíveis
+const googleDriveKeyJson = process.env.GOOGLE_DRIVE_KEY_JSON
+? JSON.parse(process.env.GOOGLE_DRIVE_KEY_JSON)
+: null;
 
-const googleDriveKeyJson = JSON.parse(process.env.GOOGLE_DRIVE_KEY_JSON || "{}");
+if (!googleDriveKeyJson) {
+    console.error("Google Drive credentials are missing or invalid.");
+}
 
 const auth = new google.auth.GoogleAuth({
     credentials: googleDriveKeyJson, // Usa as credenciais diretamente do JSON parseado
@@ -12,17 +18,30 @@ const auth = new google.auth.GoogleAuth({
 
 export async function GET() {
     try {
+        if (!googleDriveKeyJson) {
+            return NextResponse.json(
+                { error: "Google Drive credentials are missing." },
+                { status: 500 }
+            );
+        }
+        
         const client = await auth.getClient();
         const tokenResponse = await client.getAccessToken();
         const accessToken = tokenResponse?.token;
         
         if (!accessToken) {
-            return NextResponse.json({ error: "Failed to retrieve access token" }, { status: 500 });
+            return NextResponse.json(
+                { error: "Failed to retrieve access token" },
+                { status: 500 }
+            );
         }
         
         return NextResponse.json({ accessToken });
     } catch (error) {
         console.error("Error fetching access token:", error);
-        return NextResponse.json({ error: "Could not fetch access token" }, { status: 500 });
+        return NextResponse.json(
+            { error: "Could not fetch access token", details: error.message },
+            { status: 500 }
+        );
     }
 }
