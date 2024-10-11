@@ -38,6 +38,29 @@ export default function Home() {
         </p>
       </div>
 
+      {/* Card do Chat */}
+      <div
+        className="shadow-md rounded-lg p-6 max-w-md w-full flex flex-col items-center text-center"
+        style={{
+          backgroundColor: theme.palette.background.paper,
+          color: theme.palette.text.primary,
+        }}
+      >
+        <Link
+          href="/chat"
+          className="rounded-full border border-solid transition-colors bg-foreground text-background hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-12 px-6 flex items-center justify-center"
+          style={{
+            backgroundColor: theme.palette.primary.main,
+            color: theme.palette.primary.contrastText,
+          }}
+        >
+          Chat da Igreja
+        </Link>
+        <p className="mt-4 text-sm sm:text-base">
+          Fale conosco durante a programação.
+        </p>
+      </div>
+
       {/* Card dos Arquivos */}
       <div
         className="shadow-md rounded-lg p-6 max-w-md w-full flex flex-col items-center text-center"

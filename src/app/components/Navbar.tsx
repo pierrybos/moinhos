@@ -27,6 +27,8 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import LoginIcon from "@mui/icons-material/Login";
 import ThemeToggleButton from "./ThemeToggleButton"; // Importe o ThemeToggleButton
 import ListAltIcon from "@mui/icons-material/ListAlt";
+import ChatIcon from "@mui/icons-material/Chat";
+
 import Logo from "./Logo";
 
 const Navbar = () => {
@@ -58,6 +60,12 @@ const Navbar = () => {
       onKeyDown={toggleDrawer(false)}
     >
       <List>
+        <ListItem component={Link} href="/chat">
+          <ListItemIcon>
+            <ChatIcon />
+          </ListItemIcon>
+          <ListItemText primary="Chat" />
+        </ListItem>
         <ListItem component={Link} href="/formulario">
           <ListItemIcon>
             <HomeIcon />
@@ -150,6 +158,14 @@ const Navbar = () => {
         </Box>
         {/* Botões visíveis apenas em telas maiores */}
         <Box sx={{ display: { xs: "none", md: "flex" } }}>
+          <Button
+            color="inherit"
+            component={Link}
+            href="/chat"
+            startIcon={<ChatIcon />}
+          >
+            Chat
+          </Button>
           <Button
             color="inherit"
             component={Link}

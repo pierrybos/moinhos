@@ -39,8 +39,18 @@ export async function GET() {
         return NextResponse.json({ accessToken });
     } catch (error) {
         console.error("Error fetching access token:", error);
+        
+        if (error instanceof Error) {
+            
+            return NextResponse.json(
+                { error: "Could not fetch access token", details: error.message },
+                { status: 500 }
+            );
+        }
+        
+        // Caso o erro não seja uma instância de Error
         return NextResponse.json(
-            { error: "Could not fetch access token", details: error.message },
+            { error: "Could not fetch access token", details: "Unknown error occurred" },
             { status: 500 }
         );
     }
