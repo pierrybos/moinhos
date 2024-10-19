@@ -1,5 +1,11 @@
 {
   "compilerOptions": {
+    "baseUrl": ".", // Define a raiz do projeto como base
+    "paths": {
+      "@/*": [
+        "src/*"
+      ]
+    },
     "typeRoots": [
       "./node_modules/@types",
       "./src/types"
@@ -25,21 +31,18 @@
         "name": "next"
       }
     ],
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    }
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "src/utils/asdf",
-    "global.d.ts",
+    "src/**/*",
+    "global.d.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    ".next",
+    "out"
   ]
 }

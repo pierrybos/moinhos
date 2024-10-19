@@ -1,99 +1,120 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+  generator client {
+    provider = "prisma-client-js"
+  }
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+  datasource db {
+    provider  = "postgresql"
+    url       = env("POSTGRES_PRISMA_URL")
+    directUrl = env("POSTGRES_URL_NON_POOLING")
+  }
 
-generator client {
-  provider = "prisma-client-js"
-}
+  model Participant {
+    id                 Int      @id @default(autoincrement())
+    name               String
+    group              String
+    participationDate  DateTime
+    programPart        String
+    observations       String?
+    status             String   @default("Pendente")
+    isActive           Boolean  @default(true)
+    isWhatsApp         Boolean  @default(false)
+    phone              String?
+    imageRightsGranted Boolean  @default(false)
+    isMember           Boolean  @default(false)
+    microphoneCount    Int      @default(1)
+    performanceType    String   @default("Solo")
+    bibleVersion       String?
+    userPhoto          String?
+    files              File[]
+  }
 
-datasource db {
-  provider = "postgresql"
-  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
-  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
-}
+  model ProgramPart {
+    id       Int     @id @default(autoincrement())
+    name     String  @unique
+    isActive Boolean @default(true)
+  }
 
-model Participant {
-  id                  Int        @id @default(autoincrement())
-  name                String
-  group               String
-  participationDate   DateTime
-  programPart         String
-  observations        String?
-  status              String     @default("Pendente")
-  files               File[]
-  isActive            Boolean    @default(true) // Campo para exclusão lógica
-  phone               String?    // Campo para o telefone
-  isWhatsApp          Boolean    @default(false) // Campo para indicar se o telefone é WhatsApp
-  imageRightsGranted  Boolean    @default(false) // Campo para indicar se tem direito de imagem
-  isMember            Boolean    @default(false) // Campo para indicar se é membro da IASD
-  performanceType     String     @default("Solo") // Campo para armazenar o tipo de apresentação (Solo, Conjunto/Quarteto, Coral)
-  microphoneCount     Int        @default(1) // Campo opcional para o número de microfones necessários
-  userPhoto           String?    // Campo para armazenar o link da foto do usuário
-  bibleVersion        String?    // Campo opcional para armazenar a versão da Bíblia selecionada
-}
+  model File {
+    id            Int         @id @default(autoincrement())
+    filename      String
+    driveLink     String
+    participantId Int
+    participant   Participant @relation(fields: [participantId], references: [id])
+  }
 
+  model User {
+    id            Int       @id @default(autoincrement())
+    name          String?
+    email         String?   @unique
+    image         String?
+    isAdmin       Boolean   @default(false)
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+    emailVerified DateTime?
+    accounts      Account[]
+    sessions      Session[]
+    bookings      Booking[]
+  }
 
+  model Account {
+    id                Int     @id @default(autoincrement())
+    userId            Int
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String?
+    access_token      String?
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String?
+    session_state     String?
+    user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-model ProgramPart {
-  id    Int    @id @default(autoincrement())
-  name  String @unique
-  isActive Boolean @default(true) // Para permitir ativar/desativar opções
-}
+    @@unique([provider, providerAccountId])
+  }
 
-model File {
-  id          Int      @id @default(autoincrement())
-  filename    String
-  driveLink   String
-  participant Participant @relation(fields: [participantId], references: [id])
-  participantId Int
-}
+  model Session {
+    id           Int      @id @default(autoincrement())
+    sessionToken String   @unique
+    userId       Int
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  }
 
+  model VerificationToken {
+    identifier String
+    token      String   @unique
+    expires    DateTime
 
-model User {
-  id             Int       @id @default(autoincrement())
-  name           String?
-  email          String?   @unique
-  emailVerified  DateTime?
-  image          String?
-  isAdmin     Boolean  @default(false)
-  accounts       Account[]
-  sessions       Session[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
+    @@unique([identifier, token])
+  }
 
-model Account {
-  id                 Int       @id @default(autoincrement())
-  userId             Int
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?   @db.Text
-  access_token       String?   @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?   @db.Text
-  session_state      String?
-  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  model Room {
+    id       Int       @id @default(autoincrement())
+    name     String
+    capacity Int
+    bookings Booking[]
+  }
 
-  @@unique([provider, providerAccountId])
-}
+  model Department {
+    id       Int       @id @default(autoincrement())
+    name     String    @unique
+    bookings Booking[]
+  }
 
-model Session {
-  id           Int       @id @default(autoincrement())
-  sessionToken String    @unique
-  userId       Int
-  expires      DateTime
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String
-  token      String    @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
+  model Booking {
+    id           Int        @id @default(autoincrement())
+    roomId       Int
+    room         Room       @relation(fields: [roomId], references: [id])
+    userId       Int // Certifique-se de que o userId é do tipo Int
+    user         User       @relation(fields: [userId], references: [id]) // Define a relação com o User
+    departmentId Int
+    department   Department @relation(fields: [departmentId], references: [id])
+    startTime    DateTime
+    endTime      DateTime
+    observation  String? // Observações
+    phone        String? // Telefone para contato
+    isActive     Boolean    @default(true) // Status ativo ou desativado
+    status       String     @default("pending") // pending, confirmed, cancelled
+  }

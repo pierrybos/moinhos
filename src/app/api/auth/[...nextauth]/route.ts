@@ -5,7 +5,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const handler = NextAuth({
+export const authOptions = {
     adapter: PrismaAdapter(prisma),
     providers: [
         GoogleProvider({
@@ -24,12 +24,12 @@ const handler = NextAuth({
                 const userFromDb = await prisma.user.findUnique({
                     where: { id: userId },
                 });
-
+                
                 if (userFromDb) {
                     session.user.id = userFromDb.id.toString();
                     session.user.isAdmin = userFromDb.isAdmin;
                 }
-
+                
                 return session;
             } catch (error) {
                 console.error("Erro ao buscar a sessão:", error);
@@ -41,6 +41,8 @@ const handler = NextAuth({
             }
         },
     },
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

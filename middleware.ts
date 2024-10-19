@@ -2,5 +2,5 @@
 export { default } from "next-auth/middleware";
 
 export const config = {
-    matcher: ["/admin"], // Protege a rota /admin
+    matcher: ["/api/agendamentos", "/admin"], // Protege a rota /admin
 };
