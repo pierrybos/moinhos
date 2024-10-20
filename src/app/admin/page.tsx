@@ -33,6 +33,7 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import ProtectedRoute from "../components/ProtectedRoute";
 import { useSnackbar } from "../components/useSnackbar";
 import CustomSnackbar from "../components/CustomSnackbar";
+import Image from "next/image";
 
 type Participant = {
   id: number;

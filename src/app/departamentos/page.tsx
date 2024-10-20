@@ -9,9 +9,11 @@ import {
   IconButton,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { Department } from '@/types/departmentTypes'; // Ajuste o caminho conforme necessário
+
 
 export default function ManageDepartments() {
-  const [departments, setDepartments] = useState([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [name, setName] = useState("");
 
   useEffect(() => {
@@ -73,7 +75,7 @@ export default function ManageDepartments() {
               <IconButton
                 edge="end"
                 aria-label="delete"
-                onClick={() => handleDelete(department.id)}
+                onClick={() => handleDelete(Number(department.id))}
               >
                 <DeleteIcon />
               </IconButton>

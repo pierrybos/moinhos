@@ -1,11 +1,11 @@
-import NextAuth from "next-auth";
+import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export const authOptions = {
+export const authOptions:NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
     providers: [
         GoogleProvider({
@@ -17,7 +17,7 @@ export const authOptions = {
         async session({ session, user }) {
             // Inclui o isAdmin na sessão
             try {
-                const userId = parseInt(user.id, 10);
+                const userId = parseInt(user?.id, 10);
                 if (isNaN(userId)) {
                     throw new Error("ID de usuário inválido");
                 }

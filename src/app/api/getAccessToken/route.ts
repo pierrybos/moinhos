@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { google } from "googleapis";
 
+export const dynamic = "force-dynamic";
 // Verifica se as credenciais estão disponíveis
 const googleDriveKeyJson = process.env.GOOGLE_DRIVE_KEY_JSON
 ? JSON.parse(process.env.GOOGLE_DRIVE_KEY_JSON)
@@ -36,7 +37,13 @@ export async function GET() {
             );
         }
         
-        return NextResponse.json({ accessToken });
+        const response = NextResponse.json({ accessToken });
+        response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+        response.headers.set("Pragma", "no-cache");
+        response.headers.set("Expires", "0");
+        response.headers.set("Surrogate-Control", "no-store");
+        
+        return response;
     } catch (error) {
         console.error("Error fetching access token:", error);
         

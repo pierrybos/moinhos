@@ -10,8 +10,14 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 
+interface Room {
+  id: number;
+  name: string;
+  capacity: number;
+}
+
 export default function ManageRooms() {
-  const [rooms, setRooms] = useState([]);
+  const [rooms, setRooms] = useState<Room[]>([]);  // Define rooms como um array de Room
   const [name, setName] = useState("");
   const [capacity, setCapacity] = useState("");
 

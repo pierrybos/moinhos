@@ -69,6 +69,7 @@ const FormPage = () => {
     };
 
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Verifica se o token expirou

@@ -40,26 +40,27 @@ exports.__esModule = true;
 var react_1 = require("react");
 var material_1 = require("@mui/material");
 var Delete_1 = require("@mui/icons-material/Delete");
-function ManageDepartments() {
+function ManageRooms() {
     var _this = this;
-    var _a = react_1.useState([]), departments = _a[0], setDepartments = _a[1];
+    var _a = react_1.useState([]), rooms = _a[0], setRooms = _a[1]; // Define rooms como um array de Room
     var _b = react_1.useState(""), name = _b[0], setName = _b[1];
+    var _c = react_1.useState(""), capacity = _c[0], setCapacity = _c[1];
     react_1.useEffect(function () {
-        fetch("/api/departamentos")
+        fetch("/api/salas")
             .then(function (res) { return res.json(); })
-            .then(function (data) { return setDepartments(data); });
+            .then(function (data) { return setRooms(data); });
     }, []);
-    var fetchDepartments = function () { return __awaiter(_this, void 0, void 0, function () {
+    var fetchRooms = function () { return __awaiter(_this, void 0, void 0, function () {
         var res, data;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, fetch("/api/departamentos")];
+                case 0: return [4 /*yield*/, fetch("/api/salas")];
                 case 1:
                     res = _a.sent();
                     return [4 /*yield*/, res.json()];
                 case 2:
                     data = _a.sent();
-                    setDepartments(data);
+                    setRooms(data);
                     return [2 /*return*/];
             }
         });
@@ -67,15 +68,16 @@ function ManageDepartments() {
     var handleCreate = function () { return __awaiter(_this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, fetch("/api/departamentos", {
+                case 0: return [4 /*yield*/, fetch("/api/salas", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ name: name })
+                        body: JSON.stringify({ name: name, capacity: parseInt(capacity) })
                     })];
                 case 1:
                     _a.sent();
                     setName("");
-                    fetchDepartments(); // Recarregar a lista de departamentos
+                    setCapacity("");
+                    fetchRooms(); // Recarregar a lista de salas
                     return [2 /*return*/];
             }
         });
@@ -83,26 +85,27 @@ function ManageDepartments() {
     var handleDelete = function (id) { return __awaiter(_this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, fetch("/api/departamentos", {
+                case 0: return [4 /*yield*/, fetch("/api/salas", {
                         method: "DELETE",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ id: id })
                     })];
                 case 1:
                     _a.sent();
-                    fetchDepartments(); // Recarregar a lista de departamentos
+                    fetchRooms(); // Recarregar a lista de salas
                     return [2 /*return*/];
             }
         });
     }); };
     return (React.createElement("div", { className: "container mx-auto p-4" },
-        React.createElement("h1", { className: "text-2xl font-bold mb-4" }, "Gerenciar Departamentos"),
+        React.createElement("h1", { className: "text-2xl font-bold mb-4" }, "Gerenciar Salas"),
         React.createElement("div", { className: "flex space-x-4 mb-4" },
-            React.createElement(material_1.TextField, { label: "Nome do Departamento", variant: "outlined", value: name, onChange: function (e) { return setName(e.target.value); }, className: "flex-1" }),
-            React.createElement(material_1.Button, { variant: "contained", color: "primary", onClick: handleCreate }, "Criar Departamento")),
-        React.createElement(material_1.List, null, Array.isArray(departments) && departments.length > 0 ? (departments.map(function (department) { return (React.createElement(material_1.ListItem, { key: department.id, className: "bg-white shadow-lg rounded-lg mb-4 flex justify-between" },
-            React.createElement(material_1.ListItemText, { primary: department.name }),
-            React.createElement(material_1.IconButton, { edge: "end", "aria-label": "delete", onClick: function () { return handleDelete(Number(department.id)); } },
-                React.createElement(Delete_1["default"], null)))); })) : (React.createElement("p", null, "Nenhum departamento encontrado.")))));
+            React.createElement(material_1.TextField, { label: "Nome da Sala", variant: "outlined", value: name, onChange: function (e) { return setName(e.target.value); }, className: "flex-1" }),
+            React.createElement(material_1.TextField, { label: "Capacidade", type: "number", variant: "outlined", value: capacity, onChange: function (e) { return setCapacity(e.target.value); }, className: "flex-1" }),
+            React.createElement(material_1.Button, { variant: "contained", color: "primary", onClick: handleCreate }, "Criar Sala")),
+        React.createElement(material_1.List, null, rooms.map(function (room) { return (React.createElement(material_1.ListItem, { key: room.id, className: "bg-white shadow-lg rounded-lg mb-4 flex justify-between" },
+            React.createElement(material_1.ListItemText, { primary: room.name, secondary: "Capacidade: " + room.capacity + " pessoas" }),
+            React.createElement(material_1.IconButton, { edge: "end", "aria-label": "delete", onClick: function () { return handleDelete(room.id); } },
+                React.createElement(Delete_1["default"], null)))); }))));
 }
-exports["default"] = ManageDepartments;
+exports["default"] = ManageRooms;

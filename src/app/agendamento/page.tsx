@@ -9,9 +9,19 @@ import {
   FormControl,
 } from "@mui/material";
 
+interface Room {
+  id: string;
+  name: string;
+}
+
+interface Department {
+  id: string;
+  name: string;
+}
+
 export default function Schedule() {
-  const [rooms, setRooms] = useState([]);
-  const [departments, setDepartments] = useState([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [selectedRoom, setSelectedRoom] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [startTime, setStartTime] = useState("");
