@@ -127,7 +127,7 @@ const AdminProgramParts = () => {
   };
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requiredRole="admin">
       <Container
         maxWidth="md"
         sx={{

@@ -22,7 +22,7 @@ type User = {
   id: number;
   name: string;
   email: string;
-  isAdmin: boolean;
+  role: string;
 };
 
 const UserManagement = () => {
@@ -31,7 +31,7 @@ const UserManagement = () => {
   useEffect(() => {
     // Função para buscar a lista de usuários
     const fetchUsers = async () => {
-      const res = await fetch("/api/getUsers");
+      const res = await fetch("/api/users");
       const data = await res.json();
       setUsers(data.users);
     };
@@ -39,19 +39,19 @@ const UserManagement = () => {
     fetchUsers();
   }, []);
 
-  // Função para alterar o status de administrador do usuário
-  const handleAdminToggle = async (userId: number, isAdmin: boolean) => {
-    const res = await fetch(`/api/updateUser`, {
+  // Função para alterar o papel do usuário
+  const handleRoleToggle = async (userId: number, newRole: string) => {
+    const res = await fetch(`/api/users`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ id: userId, isAdmin }),
+      body: JSON.stringify({ id: userId, role: newRole }),
     });
 
     if (res.ok) {
       setUsers((prev) =>
-        prev.map((user) => (user.id === userId ? { ...user, isAdmin } : user))
+        prev.map((user) => (user.id === userId ? { ...user, role: newRole } : user))
       );
       alert("Permissão atualizada com sucesso!");
     } else {
@@ -60,7 +60,7 @@ const UserManagement = () => {
   };
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requiredRole="admin">
       <Container maxWidth="lg">
         <Typography variant="h4" component="h1" gutterBottom>
           Gerenciamento de Usuários
@@ -84,22 +84,24 @@ const UserManagement = () => {
                     <FormControlLabel
                       control={
                         <Switch
-                          checked={user.isAdmin}
+                          checked={user.role === "admin"}
                           onChange={(e) =>
-                            handleAdminToggle(user.id, e.target.checked)
+                            handleRoleToggle(user.id, e.target.checked ? "admin" : "default")
                           }
                         />
                       }
-                      label={user.isAdmin ? "Sim" : "Não"}
+                      label={user.role === "admin" ? "Sim" : "Não"}
                     />
                   </TableCell>
                   <TableCell>
                     <Button
                       variant="contained"
                       color="secondary"
-                      onClick={() => handleAdminToggle(user.id, !user.isAdmin)}
+                      onClick={() =>
+                        handleRoleToggle(user.id, user.role === "admin" ? "default" : "admin")
+                      }
                     >
-                      {user.isAdmin ? "Remover Admin" : "Tornar Admin"}
+                      {user.role === "admin" ? "Remover Admin" : "Tornar Admin"}
                     </Button>
                   </TableCell>
                 </TableRow>

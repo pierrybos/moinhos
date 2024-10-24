@@ -101,7 +101,7 @@ const AdminBookings = () => {
   };
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requiredRole="admin">
       <Container maxWidth="lg">
         <Typography variant="h4" component="h1" gutterBottom>
           Administração de Agendamentos

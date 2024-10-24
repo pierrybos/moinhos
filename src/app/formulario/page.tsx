@@ -363,7 +363,7 @@ const FormPage = () => {
         bibleVersion,
       };
 
-      await fetch("/api/saveParticipant", {
+      await fetch("/api/participants", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -20,6 +20,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
 import ClearAllIcon from "@mui/icons-material/ClearAll";
+import ProtectedRoute from "@/app/components/ProtectedRoute";
+import { isAdmin } from "@/utils/authUtils";
 
 // Definindo o tipo de cada mensagem
 type Message = {
@@ -136,19 +138,10 @@ const Chat = () => {
   };
 
   return (
+<ProtectedRoute msg="Você precisa estar autenticado para acessar o chat.">
+
     <div className="container mx-auto p-4">
-      {/* Verifica se o usuário está logado */}
-      {!session?.user ? (
-        // Exibe o botão de login se não estiver logado
-        <div className="text-center mt-8">
-          <p>Você precisa estar autenticado para acessar o chat.</p>
-          <Button variant="contained" color="primary" onClick={() => signIn()}>
-            Login
-          </Button>
-        </div>
-      ) : (
-        // Exibe o chat se o usuário estiver logado
-        <>
+
           <div className="text-right mb-4">
             <Button
               variant="outlined"
@@ -183,7 +176,7 @@ const Chat = () => {
                 )}
 
                 {/* Controles de admin para editar/remover */}
-                {session?.user?.isAdmin && (
+                {isAdmin(session?.user) && (
                   <div>
                     <IconButton
                       onClick={() => {
@@ -219,7 +212,7 @@ const Chat = () => {
           </div>
 
           {/* Botão de limpar histórico para admins */}
-          {session?.user?.isAdmin && (
+          {isAdmin(session?.user) && (
             <div className="mt-4">
               <Button
                 onClick={handleClearMessages}
@@ -231,9 +224,8 @@ const Chat = () => {
               </Button>
             </div>
           )}
-        </>
-      )}
     </div>
+</ProtectedRoute>
   );
 };
 

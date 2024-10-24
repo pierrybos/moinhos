@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { uploadFolderToDrive } from "@/utils/googleAuth"; // Importando da nova localização
+import { withRole } from "@/utils/authMiddleware";
+
 
 export async function POST(req: Request) {
     const res = await req.json();

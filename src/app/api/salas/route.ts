@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { unstable_noStore } from 'next/cache';
+import { withRole } from "@/utils/authMiddleware";
 
 const prisma = new PrismaClient();
 unstable_noStore();
@@ -25,6 +26,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+    const authError = await withRole(req, "admin");
+    if (authError) return authError; // Retorna erro de autenticação, se existir
+
     try {
         const { name, capacity } = await req.json();
         const room = await prisma.room.create({
@@ -40,6 +44,9 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+    const authError = await withRole(req, "admin");
+    if (authError) return authError; // Retorna erro de autenticação, se existir
+
     try {
         const { id, name, capacity } = await req.json();
         const room = await prisma.room.update({
@@ -56,6 +63,9 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+    const authError = await withRole(req, "admin");
+    if (authError) return authError; // Retorna erro de autenticação, se existir
+
     try {
         const { id } = await req.json();
         await prisma.room.delete({

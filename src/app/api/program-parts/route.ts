@@ -1,6 +1,7 @@
 // app/api/program-parts/route.ts
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { withRole } from "@/utils/authMiddleware";
 
 const prisma = new PrismaClient();
 
@@ -25,6 +26,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+    const authError = await withRole(req, "admin");
+    if (authError) return authError; // Retorna erro de autenticação, se existir
+
     try {
         const { name } = await req.json();
         const part = await prisma.programPart.create({
@@ -44,6 +48,10 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
+
+    const authError = await withRole(req, "admin");
+    if (authError) return authError; // Retorna erro de autenticação, se existir
+
     try {
         const { id, name, isActive } = await req.json();
         const part = await prisma.programPart.update({
@@ -64,6 +72,10 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+
+    const authError = await withRole(req, "admin");
+    if (authError) return authError; // Retorna erro de autenticação, se existir
+
     try {
         const { id } = await req.json();
         await prisma.programPart.delete({

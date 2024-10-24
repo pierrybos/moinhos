@@ -4,21 +4,19 @@ import { PrismaClient } from "@prisma/client";
 import { unstable_noStore } from 'next/cache';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { withRole } from "@/utils/authMiddleware";
+
 
 const prisma = new PrismaClient();
 unstable_noStore();
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+    const authError = await withRole(req, "manager");
+    if (authError) return authError; // Retorna erro de autenticação, se existir
+
     
-    const session = await getServerSession(authOptions);
-    
-    if (!session) {
-        return NextResponse.json(
-            { error: "Usuário não autenticado." },
-            { status: 401 }
-        );
-    }
+
     try {
         const bookings = await prisma.booking.findMany({
             where: { isActive: true },
@@ -39,6 +37,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+    const authError = await withRole(req, "default");
+    if (authError) return authError; // Retorna erro de autenticação, se existir
+
     try {
         const { roomId, departmentId, startTime, endTime, observation, userId, phone } = await req.json();
         

@@ -77,7 +77,7 @@ const UserBookings = () => {
   };
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requiredRole="admin">
       <Container maxWidth="md">
         <Typography variant="h4" component="h1" gutterBottom>
           Meus Agendamentos

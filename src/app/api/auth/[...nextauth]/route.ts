@@ -27,7 +27,7 @@ export const authOptions:NextAuthOptions = {
                 
                 if (userFromDb) {
                     session.user.id = userFromDb.id.toString();
-                    session.user.isAdmin = userFromDb.isAdmin;
+                    session.user.role = userFromDb.role;
                 }
                 
                 return session;

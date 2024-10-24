@@ -1,10 +1,16 @@
 // app/api/updateStatus/route.ts
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { withRole } from "@/utils/authMiddleware";
+
 
 const prisma = new PrismaClient();
 
 export async function PATCH(req: Request) {
+
+    const authError = await withRole(req, "admin");
+    if (authError) return authError; // Retorna erro de autenticação, se existir
+
     try {
         const { id, status, observations } = await req.json();
         

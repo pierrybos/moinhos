@@ -33,6 +33,7 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import ProtectedRoute from "../components/ProtectedRoute";
 import { useSnackbar } from "../components/useSnackbar";
 import CustomSnackbar from "../components/CustomSnackbar";
+import { isAdmin } from "@/utils/authUtils";
 import Image from "next/image";
 
 type Participant = {
@@ -77,7 +78,7 @@ const AdminPanel = () => {
   const { openSnackbar, snackbarProps } = useSnackbar();
 
   useEffect(() => {
-    if (session?.user && session.user.isAdmin) {
+    if (session?.user && isAdmin(session.user)) {
       const fetchParticipants = async () => {
         const res = await fetch("/api/getParticipants", {
           cache: "no-store",
@@ -178,7 +179,7 @@ const AdminPanel = () => {
   };
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requiredRole="admin">
       <Container maxWidth="lg">
         <Typography variant="h4" component="h1" gutterBottom>
           Painel de Administração

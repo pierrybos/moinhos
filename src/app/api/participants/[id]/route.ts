@@ -1,10 +1,15 @@
 // app/api/participants/[id]/route.ts
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { withRole } from "@/utils/authMiddleware";
 
 const prisma = new PrismaClient();
 
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+
+    const authError = await withRole(req, "admin");
+    if (authError) return authError; // Retorna erro de autenticação, se existir
+
     const participantId = parseInt(params.id, 10);
     
     if (isNaN(participantId)) {

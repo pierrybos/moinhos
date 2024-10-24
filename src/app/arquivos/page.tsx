@@ -16,6 +16,7 @@ import {
   Box,
 } from "@mui/material";
 import { useSession } from "next-auth/react";
+import { isAdmin } from "@/utils/authUtils";
 
 // Tipo para os dados dos participantes
 type Participant = {
@@ -44,7 +45,7 @@ const ViewUploads = () => {
 
       // Função para buscar os dados dos participantes e arquivos
       const fetchParticipants = async () => {
-        const res = await fetch(`/api/getParticipants?timestamp=${timestamp}`, {
+        const res = await fetch(`/api/participants?timestamp=${timestamp}`, {
           cache: "no-store",
         });
         const data = await res.json();
@@ -99,10 +100,10 @@ const ViewUploads = () => {
                 <TableCell>
                   {participant.files.map((file) => (
                     <Box key={file.id} mb={1}>
-                      {(!session || !session.user?.isAdmin) && (
+                      {(!session || !isAdmin(session.user)) && (
                         <span>{file.filename}</span>
                       )}
-                      {session && session.user?.isAdmin && (
+                      {session && isAdmin(session.user) && (
                         <a
                           href={file.driveLink}
                           target="_blank"

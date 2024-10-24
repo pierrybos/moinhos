@@ -4,30 +4,33 @@
 import React from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { Container, Typography, Button } from "@mui/material";
+import { checkRole } from "@/utils/authUtils";
 
-// Tipo das propriedades que o ProtectedRoute recebe
 type ProtectedRouteProps = {
-  children: React.ReactNode; // O conteúdo que será protegido
+  children: React.ReactNode;
+  requiredRole?: string; // Definindo o role necessário para a rota
+  msg?: string; // Mensagem personalizada para quando o acesso é negado
 };
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  requiredRole = "default", // Role padrão é "default"
+  msg = "Você não está autenticado.",
+}) => {
   const { data: session, status } = useSession();
 
-  // Proteção: se a sessão estiver carregando, exibe um estado de carregamento
   if (status === "loading") return <p>Carregando...</p>;
 
-  // Proteção: se o usuário não estiver logado, exibe mensagem e opção de login
   if (!session) {
     return (
       <Container>
-        <Typography variant="h6">Você não está autenticado.</Typography>
+        <Typography variant="h6">{msg}</Typography>
         <Button onClick={() => signIn()}>Faça login</Button>
       </Container>
     );
   }
 
-  // Proteção: se o usuário não for administrador, exibe acesso negado
-  if (!session.user?.isAdmin) {
+  if (!checkRole(session.user, requiredRole)) {
     return (
       <Container>
         <Typography variant="h6">
@@ -38,7 +41,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  // Se o usuário estiver autenticado e for administrador, renderiza o conteúdo
   return <>{children}</>;
 };
 
