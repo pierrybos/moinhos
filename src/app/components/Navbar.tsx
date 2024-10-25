@@ -28,12 +28,15 @@ import LoginIcon from "@mui/icons-material/Login";
 import ThemeToggleButton from "./ThemeToggleButton"; // Importe o ThemeToggleButton
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import ChatIcon from "@mui/icons-material/Chat";
+import { isAdmin } from "@/utils/authUtils";
+
 
 import Logo from "./Logo";
 
 const Navbar = () => {
   const { data: session } = useSession();
-  const isAdmin = session?.user?.isAdmin;
+  const bolIsAdmin = isAdmin(session?.user);
+
 
   // Estado para controlar o estado do Drawer (menu colapsável)
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -86,7 +89,7 @@ const Navbar = () => {
               </ListItemIcon>
               <ListItemText primary="Perfil" />
             </ListItem>
-            {isAdmin && (
+            {bolIsAdmin && (
               <ListItem component={Link} href="/admin/users">
                 <ListItemIcon>
                   <AdminPanelSettingsIcon />
@@ -94,7 +97,7 @@ const Navbar = () => {
                 <ListItemText primary="Usuários" />
               </ListItem>
             )}
-            {isAdmin && (
+            {bolIsAdmin && (
               <ListItem component={Link} href="/admin/program-parts">
                 <ListItemIcon>
                   <ListAltIcon />
@@ -192,7 +195,7 @@ const Navbar = () => {
               >
                 Perfil
               </Button>
-              {isAdmin && (
+              {bolIsAdmin && (
                 <Button
                   color="inherit"
                   component={Link}
@@ -202,7 +205,7 @@ const Navbar = () => {
                   Usuários
                 </Button>
               )}
-              {isAdmin && (
+              {bolIsAdmin && (
                 <Button
                   color="inherit"
                   component={Link}

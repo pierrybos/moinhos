@@ -2,8 +2,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { unstable_noStore } from 'next/cache';
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { withRole } from "@/utils/authMiddleware";
 
 
