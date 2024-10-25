@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 unstable_noStore();
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
     const authError = await withRole(req, "manager");
     if (authError) return authError; // Retorna erro de autenticação, se existir
 

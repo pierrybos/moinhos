@@ -35,7 +35,7 @@ import Logo from "./Logo";
 
 const Navbar = () => {
   const { data: session } = useSession();
-  const bolIsAdmin = isAdmin(session?.user);
+  const bolIsAdmin = session?.user ? isAdmin(session.user) : false;
 
 
   // Estado para controlar o estado do Drawer (menu colapsável)

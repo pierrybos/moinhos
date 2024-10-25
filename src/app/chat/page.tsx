@@ -138,94 +138,92 @@ const Chat = () => {
   };
 
   return (
-<ProtectedRoute msg="Você precisa estar autenticado para acessar o chat.">
+    <ProtectedRoute msg="Você precisa estar autenticado para acessar o chat.">
+      <div className="container mx-auto p-4">
+        <div className="text-right mb-4">
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={() => signOut()}
+          >
+            Logout
+          </Button>
+        </div>
 
-    <div className="container mx-auto p-4">
+        <div className="bg-white p-6 rounded shadow-lg h-96 overflow-y-scroll">
+          {messages.map((msg) => (
+            <div key={msg.id} className="mb-4">
+              {editMessageId === msg.id ? (
+                <div>
+                  <TextField
+                    value={editedMessage}
+                    onChange={(e) => setEditedMessage(e.target.value)}
+                    fullWidth
+                  />
+                  <IconButton
+                    onClick={() => handleEditMessage(msg.id)}
+                    color="primary"
+                  >
+                    <SaveIcon />
+                  </IconButton>
+                </div>
+              ) : (
+                <>
+                  <strong>{msg.user}:</strong> {msg.text}
+                </>
+              )}
 
-          <div className="text-right mb-4">
-            <Button
-              variant="outlined"
-              color="secondary"
-              onClick={() => signOut()}
-            >
-              Logout
-            </Button>
-          </div>
-
-          <div className="bg-white p-6 rounded shadow-lg h-96 overflow-y-scroll">
-            {messages.map((msg) => (
-              <div key={msg.id} className="mb-4">
-                {editMessageId === msg.id ? (
-                  <div>
-                    <TextField
-                      value={editedMessage}
-                      onChange={(e) => setEditedMessage(e.target.value)}
-                      fullWidth
-                    />
-                    <IconButton
-                      onClick={() => handleEditMessage(msg.id)}
-                      color="primary"
-                    >
-                      <SaveIcon />
-                    </IconButton>
-                  </div>
-                ) : (
-                  <>
-                    <strong>{msg.user}:</strong> {msg.text}
-                  </>
-                )}
-
-                {/* Controles de admin para editar/remover */}
-                {isAdmin(session?.user) && (
-                  <div>
-                    <IconButton
-                      onClick={() => {
-                        setEditMessageId(msg.id);
-                        setEditedMessage(msg.text);
-                      }}
-                      color="primary"
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleDeleteMessage(msg.id)}
-                      color="secondary"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 flex">
-            <TextField
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              variant="outlined"
-              fullWidth
-            />
-            <Button onClick={sendMessage} variant="contained" className="ml-2">
-              Send
-            </Button>
-          </div>
-
-          {/* Botão de limpar histórico para admins */}
-          {isAdmin(session?.user) && (
-            <div className="mt-4">
-              <Button
-                onClick={handleClearMessages}
-                variant="contained"
-                color="secondary"
-                startIcon={<ClearAllIcon />}
-              >
-                Limpar Histórico
-              </Button>
+              {/* Controles de admin para editar/remover */}
+              {session?.user && isAdmin(session.user) && (
+                <div>
+                  <IconButton
+                    onClick={() => {
+                      setEditMessageId(msg.id);
+                      setEditedMessage(msg.text);
+                    }}
+                    color="primary"
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => handleDeleteMessage(msg.id)}
+                    color="secondary"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </div>
+              )}
             </div>
-          )}
-    </div>
-</ProtectedRoute>
+          ))}
+        </div>
+
+        <div className="mt-4 flex">
+          <TextField
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            variant="outlined"
+            fullWidth
+          />
+          <Button onClick={sendMessage} variant="contained" className="ml-2">
+            Send
+          </Button>
+        </div>
+
+        {/* Botão de limpar histórico para admins */}
+        {session?.user && isAdmin(session.user) && (
+          <div className="mt-4">
+            <Button
+              onClick={handleClearMessages}
+              variant="contained"
+              color="secondary"
+              startIcon={<ClearAllIcon />}
+            >
+              Limpar Histórico
+            </Button>
+          </div>
+        )}
+      </div>
+    </ProtectedRoute>
   );
 };
 
