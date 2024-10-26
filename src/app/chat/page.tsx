@@ -22,6 +22,8 @@ import SaveIcon from "@mui/icons-material/Save";
 import ClearAllIcon from "@mui/icons-material/ClearAll";
 import ProtectedRoute from "@/app/components/ProtectedRoute";
 import { isAdmin } from "@/utils/authUtils";
+import { useTheme } from "@mui/material/styles"; // Importar o hook do tema
+
 
 // Definindo o tipo de cada mensagem
 type Message = {
@@ -33,11 +35,19 @@ type Message = {
 };
 
 const Chat = () => {
-  const { data: session } = useSession(); // Usando useSession para autenticação
+  const theme = useTheme(); // Obter o tema atual
+  const { data: session } = useSession();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]); // Definindo o tipo das mensagens
   const [editMessageId, setEditMessageId] = useState<string | null>(null);
   const [editedMessage, setEditedMessage] = useState("");
+
+
+const containerStyle = {
+    backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#ffffff',
+    color: theme.palette.mode === 'dark' ? '#f0f0f0' : '#000000',
+  };
+
 
   useEffect(() => {
     if ("Notification" in window && Notification.permission !== "granted") {
@@ -150,7 +160,11 @@ const Chat = () => {
           </Button>
         </div>
 
-        <div className="bg-white p-6 rounded shadow-lg h-96 overflow-y-scroll">
+        {/* Adicionando estilo condicional */}
+        <div
+          className="rounded shadow-lg h-96 overflow-y-scroll"
+          style={containerStyle}
+        >
           {messages.map((msg) => (
             <div key={msg.id} className="mb-4">
               {editMessageId === msg.id ? (
@@ -159,6 +173,11 @@ const Chat = () => {
                     value={editedMessage}
                     onChange={(e) => setEditedMessage(e.target.value)}
                     fullWidth
+                    InputProps={{
+                      style: {
+                        color: theme.palette.mode === 'dark' ? '#f0f0f0' : '#000000',
+                      },
+                    }}
                   />
                   <IconButton
                     onClick={() => handleEditMessage(msg.id)}
@@ -203,6 +222,12 @@ const Chat = () => {
             onChange={(e) => setMessage(e.target.value)}
             variant="outlined"
             fullWidth
+            InputProps={{
+              style: {
+                backgroundColor: theme.palette.mode === 'dark' ? '#2e2e2e' : '#ffffff',
+                color: theme.palette.mode === 'dark' ? '#f0f0f0' : '#000000',
+              },
+            }}
           />
           <Button onClick={sendMessage} variant="contained" className="ml-2">
             Send
