@@ -1,120 +1,155 @@
   generator client {
-    provider = "prisma-client-js"
-  }
+  provider = "prisma-client-js"
+}
 
-  datasource db {
-    provider  = "postgresql"
-    url       = env("POSTGRES_PRISMA_URL")
-    directUrl = env("POSTGRES_URL_NON_POOLING")
-  }
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
 
-  model Participant {
+model Institution {
+  id            Int       @id @default(autoincrement())
+  name          String
+  slug          String    @unique
+  driveConfig   Json      // Configurações do Google Drive e do formulário
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  isActive      Boolean   @default(true)
+  users         User[]
+  participants  Participant[]
+  programParts  ProgramPart[]
+  files         File[]
+  bookings      Booking[]
+  departments   Department[]
+  rooms         Room[]
+}
+
+model Participant {
     id                 Int      @id @default(autoincrement())
-    name               String
-    group              String
-    participationDate  DateTime
-    programPart        String
-    observations       String?
+  name               String
+  group              String
+  participationDate  DateTime
+  programPart        String
+  observations       String?
     status             String   @default("Pendente")
     isActive           Boolean  @default(true)
     isWhatsApp         Boolean  @default(false)
-    phone              String?
+  phone              String?
     imageRightsGranted Boolean  @default(false)
     isMember           Boolean  @default(false)
     microphoneCount    Int      @default(1)
     performanceType    String   @default("Solo")
-    bibleVersion       String?
-    userPhoto          String?
-    files              File[]
-  }
+  bibleVersion       String?
+  userPhoto          String?
+  files              File[]
+  institutionId      Int
+  institution        Institution @relation(fields: [institutionId], references: [id])
+}
 
-  model ProgramPart {
-    id       Int     @id @default(autoincrement())
-    name     String  @unique
-    isActive Boolean @default(true)
-  }
+model ProgramPart {
+  id            Int         @id @default(autoincrement())
+  name          String      
+  isActive      Boolean     @default(true)
+  institutionId Int
+  institution   Institution @relation(fields: [institutionId], references: [id])
 
-  model File {
-    id            Int         @id @default(autoincrement())
-    filename      String
-    driveLink     String
-    participantId Int
-    participant   Participant @relation(fields: [participantId], references: [id])
-  }
+  @@unique([name, institutionId])
+}
 
-  model User {
-    id            Int       @id @default(autoincrement())
-    name          String?
-    email         String?   @unique
-    image         String?
-    role          String    @default("default") // "admin", "manager", ou "default"
-    createdAt     DateTime  @default(now())
-    updatedAt     DateTime  @updatedAt
-    emailVerified DateTime?
-    accounts      Account[]
-    sessions      Session[]
-    bookings      Booking[]
-  }
+model File {
+  id            Int         @id @default(autoincrement())
+  filename      String
+  driveLink     String
+  participantId Int
+  participant   Participant @relation(fields: [participantId], references: [id])
+  institutionId Int
+  institution   Institution @relation(fields: [institutionId], references: [id])
+}
 
-  model Account {
-    id                Int     @id @default(autoincrement())
-    userId            Int
-    type              String
-    provider          String
-    providerAccountId String
-    refresh_token     String?
-    access_token      String?
-    expires_at        Int?
-    token_type        String?
-    scope             String?
-    id_token          String?
-    session_state     String?
-    user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+model User {
+  id            Int          @id @default(autoincrement())
+  name          String?
+  email         String?      @unique
+  password      String?      // Para login administrativo
+  image         String?
+  role          String       @default("user") // "admin", "manager", ou "user"
+  isApproved    Boolean      @default(false)  // Para controle de aprovação
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  emailVerified DateTime?
+  accounts      Account[]
+  sessions      Session[]
+  bookings      Booking[]
+  institutionId Int
+  institution   Institution  @relation(fields: [institutionId], references: [id])
+}
 
-    @@unique([provider, providerAccountId])
-  }
+model Account {
+  id                Int     @id @default(autoincrement())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  model Session {
-    id           Int      @id @default(autoincrement())
-    sessionToken String   @unique
-    userId       Int
-    expires      DateTime
-    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  }
+  @@unique([provider, providerAccountId])
+}
 
-  model VerificationToken {
-    identifier String
-    token      String   @unique
-    expires    DateTime
+model Session {
+  id           Int      @id @default(autoincrement())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
 
-    @@unique([identifier, token])
-  }
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
 
-  model Room {
-    id       Int       @id @default(autoincrement())
-    name     String
-    capacity Int
-    bookings Booking[]
-  }
+  @@unique([identifier, token])
+}
 
-  model Department {
-    id       Int       @id @default(autoincrement())
-    name     String    @unique
-    bookings Booking[]
-  }
+model Room {
+  id       Int       @id @default(autoincrement())
+  name     String
+  capacity Int
+  institutionId Int
+  institution Institution @relation(fields: [institutionId], references: [id])
+  bookings Booking[]
+}
 
-  model Booking {
-    id           Int        @id @default(autoincrement())
-    roomId       Int
-    room         Room       @relation(fields: [roomId], references: [id])
-    userId       Int // Certifique-se de que o userId é do tipo Int
-    user         User       @relation(fields: [userId], references: [id]) // Define a relação com o User
-    departmentId Int
-    department   Department @relation(fields: [departmentId], references: [id])
-    startTime    DateTime
-    endTime      DateTime
-    observation  String? // Observações
-    phone        String? // Telefone para contato
-    isActive     Boolean    @default(true) // Status ativo ou desativado
-    status       String     @default("pending") // pending, confirmed, cancelled
-  }
+model Department {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  institutionId Int
+  institution Institution @relation(fields: [institutionId], references: [id])
+  bookings Booking[]
+}
+
+model Booking {
+  id           Int        @id @default(autoincrement())
+  roomId       Int
+  room         Room       @relation(fields: [roomId], references: [id])
+  userId       Int // Certifique-se de que o userId é do tipo Int
+  user         User       @relation(fields: [userId], references: [id]) // Define a relação com o User
+  departmentId Int
+  department   Department @relation(fields: [departmentId], references: [id])
+  startTime    DateTime
+  endTime      DateTime
+  observation  String? // Observações
+  phone        String? // Telefone para contato
+  isActive     Boolean    @default(true) // Status ativo ou desativado
+  status       String     @default("pending") // pending, confirmed, cancelled
+  institutionId Int
+  institution   Institution @relation(fields: [institutionId], references: [id])
+}
