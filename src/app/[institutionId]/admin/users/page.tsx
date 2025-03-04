@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useTheme } from '@mui/material/styles';
+import { useEffect, useState, useCallback } from 'react';
 
 interface User {
   userId: number;
@@ -12,15 +11,10 @@ interface User {
 }
 
 export default function UsersAdminPage({ params }: { params: { institutionId: string } }) {
-  const theme = useTheme();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const response = await fetch(`/api/institutions/${params.institutionId}/users`);
       const data = await response.json();
@@ -30,7 +24,11 @@ export default function UsersAdminPage({ params }: { params: { institutionId: st
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.institutionId]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleApprove = async (userId: number) => {
     try {

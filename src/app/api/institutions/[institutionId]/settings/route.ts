@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { DriveConfig } from '@/types/institution';
 
 export async function GET(
   request: Request,
@@ -17,26 +18,22 @@ export async function GET(
 
     if (!institution) {
       return NextResponse.json(
-        {
-          error: 'Institution not found',
-        },
+        { error: 'Institution not found' },
         { status: 404 }
       );
     }
 
-    // Get settings from driveConfig
-    const driveConfig = institution.driveConfig as any;
+    const driveConfig = institution.driveConfig as unknown as DriveConfig;
     const settings = {
-      maxMicrophones: typeof driveConfig.maxMicrophones === 'number' ? driveConfig.maxMicrophones : 5,
-      membershipText: driveConfig.membershipText || "Declaro que sou membro desta instituição",
-      imageRightsText: driveConfig.imageRightsText || "Autorizo o uso da minha imagem",
-      bibleVersions: driveConfig.bibleVersions || ["NVI", "ACF", "ARA"],
-      driveConfig: driveConfig,
+      maxMicrophones: driveConfig?.maxMicrophones ?? 5,
+      membershipText: driveConfig?.membershipText ?? "Declaro que sou membro desta instituição",
+      imageRightsText: driveConfig?.imageRightsText ?? "Autorizo o uso da minha imagem",
+      bibleVersions: driveConfig?.bibleVersions ?? ["NVI", "ACF", "ARA"],
+      driveConfig: driveConfig ?? {},
     };
 
     return NextResponse.json(settings);
   } catch (error) {
-    console.error('Error fetching institution settings:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

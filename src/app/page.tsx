@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTheme } from "@mui/material/styles";
-import { PrismaClient } from '@prisma/client';
 
 interface Institution {
   id: number;

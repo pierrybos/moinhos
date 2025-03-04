@@ -16,7 +16,7 @@ export async function PATCH(
     }
 
     const institution = await prisma.institution.findUnique({
-      where: { id: params.institutionId },
+      where: { slug: params.institutionId },
     });
 
     if (!institution) {

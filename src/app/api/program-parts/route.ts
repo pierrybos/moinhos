@@ -1,95 +1,199 @@
 // app/api/program-parts/route.ts
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { withRole } from "@/utils/authMiddleware";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
 
 export async function GET() {
-    try {
-        // Buscar todas as partes do programa ativas
-        const parts = await prisma.programPart.findMany({
-            where: { isActive: true },
-            orderBy: { name: 'asc' }, // Ordenar por nome
-        });
-        return NextResponse.json(parts);
-    } catch (error) {
-        console.error("Erro ao buscar as partes do programa:", error);
-        return NextResponse.json(
-            { error: "Erro ao buscar as partes do programa." },
-            { status: 500 }
-        );
-    } finally {
-        // Encerra a conexão para evitar retenção de cache de conexão
-        await prisma.$disconnect();
+  try {
+    const session = await getServerSession();
+
+    if (!session?.user?.email) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
+
+    const parts = await prisma.programPart.findMany({
+      where: {
+        institution: {
+          users: {
+            some: {
+              email: session.user.email,
+            },
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(parts);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 }
 
-export async function POST(req: Request) {
-    const authError = await withRole(req, "admin");
-    if (authError) return authError; // Retorna erro de autenticação, se existir
+export async function POST(request: Request) {
+  try {
+    const session = await getServerSession();
 
-    try {
-        const { name } = await req.json();
-        const part = await prisma.programPart.create({
-            data: { name },
-        });
-        return NextResponse.json(part);
-    } catch (error) {
-        console.error("Erro ao adicionar a parte do programa:", error);
-        return NextResponse.json(
-            { error: "Erro ao adicionar a parte do programa." },
-            { status: 500 }
-        );
-    } finally {
-        // Encerra a conexão para evitar retenção de cache de conexão
-        await prisma.$disconnect();
+    if (!session?.user?.email) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
+
+    const data = await request.json();
+    const { name, institutionSlug } = data;
+
+    if (!name || !institutionSlug) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const institution = await prisma.institution.findFirst({
+      where: {
+        slug: institutionSlug,
+        users: {
+          some: {
+            email: session.user.email,
+            role: "admin",
+          },
+        },
+      },
+    });
+
+    if (!institution) {
+      return NextResponse.json(
+        { error: "Institution not found or user is not admin" },
+        { status: 404 }
+      );
+    }
+
+    const part = await prisma.programPart.create({
+      data: {
+        name,
+        institution: {
+          connect: {
+            id: institution.id,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(part);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 }
 
-export async function PATCH(req: Request) {
+export async function PATCH(request: Request) {
+  try {
+    const session = await getServerSession();
 
-    const authError = await withRole(req, "admin");
-    if (authError) return authError; // Retorna erro de autenticação, se existir
-
-    try {
-        const { id, name, isActive } = await req.json();
-        const part = await prisma.programPart.update({
-            where: { id },
-            data: { name, isActive },
-        });
-        return NextResponse.json(part);
-    } catch (error) {
-        console.error("Erro ao atualizar a parte do programa:", error);
-        return NextResponse.json(
-            { error: "Erro ao atualizar a parte do programa." },
-            { status: 500 }
-        );
-    } finally {
-        // Encerra a conexão para evitar retenção de cache de conexão
-        await prisma.$disconnect();
+    if (!session?.user?.email) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
+
+    const data = await request.json();
+    const { id, name, institutionSlug, isActive } = data;
+
+    if (!id || !name || !institutionSlug) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const institution = await prisma.institution.findFirst({
+      where: {
+        slug: institutionSlug,
+        users: {
+          some: {
+            email: session.user.email,
+            role: "admin",
+          },
+        },
+      },
+    });
+
+    if (!institution) {
+      return NextResponse.json(
+        { error: "Institution not found or user is not admin" },
+        { status: 404 }
+      );
+    }
+
+    const part = await prisma.programPart.update({
+      where: { id },
+      data: {
+        name,
+        institution: {
+          connect: {
+            id: institution.id,
+          },
+        },
+        isActive,
+      },
+    });
+
+    return NextResponse.json(part);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(request: Request) {
+  try {
+    const session = await getServerSession();
 
-    const authError = await withRole(req, "admin");
-    if (authError) return authError; // Retorna erro de autenticação, se existir
-
-    try {
-        const { id } = await req.json();
-        await prisma.programPart.delete({
-            where: { id },
-        });
-        return NextResponse.json({ message: "Parte do programa removida com sucesso." });
-    } catch (error) {
-        console.error("Erro ao remover a parte do programa:", error);
-        return NextResponse.json(
-            { error: "Erro ao remover a parte do programa." },
-            { status: 500 }
-        );
-    } finally {
-        // Encerra a conexão para evitar retenção de cache de conexão
-        await prisma.$disconnect();
+    if (!session?.user?.email) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
+
+    const data = await request.json();
+    const { id, institutionSlug } = data;
+
+    if (!id || !institutionSlug) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const institution = await prisma.institution.findFirst({
+      where: {
+        slug: institutionSlug,
+        users: {
+          some: {
+            email: session.user.email,
+            role: "admin",
+          },
+        },
+      },
+    });
+
+    if (!institution) {
+      return NextResponse.json(
+        { error: "Institution not found or user is not admin" },
+        { status: 404 }
+      );
+    }
+
+    await prisma.programPart.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ message: "Parte do programa removida com sucesso." });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 }

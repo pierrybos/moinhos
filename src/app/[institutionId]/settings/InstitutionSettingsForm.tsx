@@ -1,46 +1,43 @@
 'use client';
 
 import { useState } from 'react';
-import { Institution } from '@prisma/client';
 import { TextField, Button, Box, Typography, Paper, Grid, Chip, IconButton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
+import { InstitutionWithDriveConfig } from '@/types/institution';
 
 interface InstitutionSettingsFormProps {
-  institution: Institution;
-}
-
-interface DriveConfig {
-  clientId: string;
-  clientSecret: string;
-  redirectUri: string;
-  refreshToken: string;
-  serviceAccountKey: string;
-  serviceAccountEmail: string;
-  sharedDriveId: string;
-  maxMicrophones: number;
-  membershipText: string;
-  imageRightsText: string;
-  bibleVersions: string[];
+  institution: InstitutionWithDriveConfig;
 }
 
 export default function InstitutionSettingsForm({ institution }: InstitutionSettingsFormProps) {
-  const driveConfig = institution.driveConfig as DriveConfig;
-  
+  const driveConfig = institution.driveConfig || {
+    clientId: '',
+    clientSecret: '',
+    redirectUri: '',
+    refreshToken: '',
+    serviceAccountKey: '',
+    serviceAccountEmail: '',
+    sharedDriveId: '',
+    maxMicrophones: 5,
+    membershipText: "Declaro que sou membro desta instituição",
+    imageRightsText: "Autorizo o uso da minha imagem",
+    bibleVersions: ["NVI", "ACF", "ARA"],
+  };
+
   const [formData, setFormData] = useState({
     name: institution.name || '',
     driveConfig: {
-      clientId: driveConfig?.clientId || '',
-      clientSecret: driveConfig?.clientSecret || '',
-      redirectUri: driveConfig?.redirectUri || '',
-      refreshToken: driveConfig?.refreshToken || '',
-      serviceAccountKey: driveConfig?.serviceAccountKey || '',
-      serviceAccountEmail: driveConfig?.serviceAccountEmail || '',
-      sharedDriveId: driveConfig?.sharedDriveId || '',
-      maxMicrophones: driveConfig?.maxMicrophones || 5,
-      membershipText: driveConfig?.membershipText || "Declaro que sou membro desta instituição",
-      imageRightsText: driveConfig?.imageRightsText || "Autorizo o uso da minha imagem",
-      bibleVersions: driveConfig?.bibleVersions || ["NVI", "ACF", "ARA"],
+      clientId: driveConfig.clientId,
+      clientSecret: driveConfig.clientSecret,
+      redirectUri: driveConfig.redirectUri,
+      refreshToken: driveConfig.refreshToken,
+      serviceAccountKey: driveConfig.serviceAccountKey,
+      serviceAccountEmail: driveConfig.serviceAccountEmail,
+      sharedDriveId: driveConfig.sharedDriveId,
+      maxMicrophones: driveConfig.maxMicrophones,
+      membershipText: driveConfig.membershipText,
+      imageRightsText: driveConfig.imageRightsText,
+      bibleVersions: driveConfig.bibleVersions,
     },
   });
 

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
+import { DriveConfig } from '@/types/institution';
+import { Prisma } from '@prisma/client';
 
 export async function PATCH(
   request: Request,
@@ -9,7 +11,7 @@ export async function PATCH(
   try {
     const session = await getServerSession();
 
-    if (!session) {
+    if (!session?.user?.email) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
@@ -19,8 +21,8 @@ export async function PATCH(
     // Verify user has access to this institution
     const user = await prisma.user.findFirst({
       where: {
-        email: session.user?.email,
-        institutionId: institutionId,
+        email: session.user.email,
+        institutionId,
         role: 'admin',
       },
     });
@@ -30,26 +32,25 @@ export async function PATCH(
     }
 
     // Validate required fields
-    if (!data.name) {
+    if (!data.name || !data.driveConfig) {
       return new NextResponse('Missing required fields', { status: 400 });
     }
 
-    // Validate driveConfig fields
-    if (!data.driveConfig) {
-      return new NextResponse('Missing driveConfig', { status: 400 });
+    const driveConfig = data.driveConfig as DriveConfig;
+    if (!driveConfig.clientId || !driveConfig.clientSecret || !driveConfig.redirectUri) {
+      return new NextResponse('Missing required driveConfig fields', { status: 400 });
     }
 
     const updatedInstitution = await prisma.institution.update({
       where: { id: institutionId },
       data: {
         name: data.name,
-        driveConfig: data.driveConfig, // Use driveConfig directly from the request
+        driveConfig: JSON.parse(JSON.stringify(driveConfig)) as Prisma.InputJsonValue,
       },
     });
 
     return NextResponse.json(updatedInstitution);
   } catch (error) {
-    console.error('Error updating institution:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

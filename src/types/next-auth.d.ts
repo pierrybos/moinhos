@@ -5,13 +5,17 @@ import { DefaultSession } from "next-auth";
 declare module "next-auth" {
     interface Session {
         user: {
-            id: string;     // Inclua o campo `id`
-            role: string;   // Use o campo `role` em vez de `isAdmin`
-        } & DefaultSession["user"];  // Extende os campos padrão (name, email, image)
+            id: string;
+            role: string;
+            isApproved: boolean;
+            institutionId: number;
+        } & DefaultSession["user"];
     }
     
     interface User {
-        id: string;       // Inclua o campo `id`
-        role: string;     // Use o campo `role` em vez de `isAdmin`
+        id: string;
+        role: string;
+        isApproved: boolean;
+        institutionId: number;
     }
 }

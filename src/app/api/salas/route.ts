@@ -1,81 +1,200 @@
 // app/api/rooms/route.ts
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { unstable_noStore } from 'next/cache';
-import { withRole } from "@/utils/authMiddleware";
-
-const prisma = new PrismaClient();
-unstable_noStore();
-export const dynamic = "force-dynamic";
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
 
 export async function GET() {
-    try {
-        const rooms = await prisma.room.findMany();
-        const response = NextResponse.json(rooms);
-        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-        response.headers.set('Pragma', 'no-cache');
-        response.headers.set('Expires', '0');
-        response.headers.set('Surrogate-Control', 'no-store');
-        return response;
-    } catch (error) {
-        console.error("Erro ao buscar salas:", error);
-        return NextResponse.json({ error: "Erro ao buscar salas." }, { status: 500 });
-    } finally {
-        await prisma.$disconnect();
+  try {
+    const session = await getServerSession();
+
+    if (!session?.user?.email) {
+      return new NextResponse('Unauthorized', { status: 401 });
     }
+
+    const rooms = await prisma.room.findMany({
+      where: {
+        institution: {
+          users: {
+            some: {
+              email: session.user.email,
+            },
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(rooms);
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }
 
-export async function POST(req: Request) {
-    const authError = await withRole(req, "admin");
-    if (authError) return authError; // Retorna erro de autenticação, se existir
+export async function POST(request: Request) {
+  try {
+    const session = await getServerSession();
 
-    try {
-        const { name, capacity } = await req.json();
-        const room = await prisma.room.create({
-            data: { name, capacity },
-        });
-        return NextResponse.json(room);
-    } catch (error) {
-        console.error("Erro ao criar sala:", error);
-        return NextResponse.json({ error: "Erro ao criar sala." }, { status: 500 });
-    } finally {
-        await prisma.$disconnect();
+    if (!session?.user?.email) {
+      return new NextResponse('Unauthorized', { status: 401 });
     }
+
+    const data = await request.json();
+    const { name, capacity, institutionSlug } = data;
+
+    if (!name || !capacity || !institutionSlug) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    const institution = await prisma.institution.findFirst({
+      where: {
+        slug: institutionSlug,
+        users: {
+          some: {
+            email: session.user.email,
+            role: 'admin',
+          },
+        },
+      },
+    });
+
+    if (!institution) {
+      return NextResponse.json(
+        { error: 'Institution not found or user is not admin' },
+        { status: 404 }
+      );
+    }
+
+    const room = await prisma.room.create({
+      data: {
+        name,
+        capacity: parseInt(capacity),
+        institution: {
+          connect: {
+            id: institution.id,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(room);
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }
 
-export async function PUT(req: Request) {
-    const authError = await withRole(req, "admin");
-    if (authError) return authError; // Retorna erro de autenticação, se existir
+export async function PATCH(request: Request) {
+  try {
+    const session = await getServerSession();
 
-    try {
-        const { id, name, capacity } = await req.json();
-        const room = await prisma.room.update({
-            where: { id },
-            data: { name, capacity },
-        });
-        return NextResponse.json(room);
-    } catch (error) {
-        console.error("Erro ao atualizar sala:", error);
-        return NextResponse.json({ error: "Erro ao atualizar sala." }, { status: 500 });
-    } finally {
-        await prisma.$disconnect();
+    if (!session?.user?.email) {
+      return new NextResponse('Unauthorized', { status: 401 });
     }
+
+    const data = await request.json();
+    const { id, name, capacity, institutionSlug } = data;
+
+    if (!id || !name || !capacity || !institutionSlug) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    const institution = await prisma.institution.findFirst({
+      where: {
+        slug: institutionSlug,
+        users: {
+          some: {
+            email: session.user.email,
+            role: 'admin',
+          },
+        },
+      },
+    });
+
+    if (!institution) {
+      return NextResponse.json(
+        { error: 'Institution not found or user is not admin' },
+        { status: 404 }
+      );
+    }
+
+    const room = await prisma.room.update({
+      where: { id },
+      data: {
+        name,
+        capacity: parseInt(capacity),
+        institution: {
+          connect: {
+            id: institution.id,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(room);
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }
 
-export async function DELETE(req: Request) {
-    const authError = await withRole(req, "admin");
-    if (authError) return authError; // Retorna erro de autenticação, se existir
+export async function DELETE(request: Request) {
+  try {
+    const session = await getServerSession();
 
-    try {
-        const { id } = await req.json();
-        await prisma.room.delete({
-            where: { id },
-        });
-        return NextResponse.json({ message: "Sala excluída com sucesso." });
-    } catch (error) {
-        console.error("Erro ao excluir sala:", error);
-        return NextResponse.json({ error: "Erro ao excluir sala." }, { status: 500 });
-    } finally {
-        await prisma.$disconnect();
+    if (!session?.user?.email) {
+      return new NextResponse('Unauthorized', { status: 401 });
     }
+
+    const data = await request.json();
+    const { id, institutionSlug } = data;
+
+    if (!id || !institutionSlug) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    const institution = await prisma.institution.findFirst({
+      where: {
+        slug: institutionSlug,
+        users: {
+          some: {
+            email: session.user.email,
+            role: 'admin',
+          },
+        },
+      },
+    });
+
+    if (!institution) {
+      return NextResponse.json(
+        { error: 'Institution not found or user is not admin' },
+        { status: 404 }
+      );
+    }
+
+    await prisma.room.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ message: 'Room deleted successfully' });
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }

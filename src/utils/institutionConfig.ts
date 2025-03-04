@@ -1,52 +1,67 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
-const prisma = new PrismaClient();
-
-export interface DriveConfig {
+export type DriveConfig = {
   clientId: string;
   clientSecret: string;
   redirectUri: string;
   refreshToken: string;
-  folderId: string;
+  accessToken: string;
+  expiryDate: number;
+  scope: string;
+  tokenType: string;
+  idToken: string;
+  uploadFolderId: string;
+  uploadFolderName: string;
+};
+
+export async function getInstitutionConfig(institutionSlug: string): Promise<DriveConfig> {
+  const institution = await prisma.institution.findFirst({
+    where: { slug: institutionSlug },
+  });
+
+  if (!institution || !institution.driveConfig) {
+    throw new Error('Institution not found or drive config not set');
+  }
+
+  const driveConfig = institution.driveConfig as unknown as DriveConfig;
+
+  // Validate the required fields
+  if (
+    !driveConfig.clientId ||
+    !driveConfig.clientSecret ||
+    !driveConfig.redirectUri ||
+    !driveConfig.refreshToken ||
+    !driveConfig.accessToken ||
+    !driveConfig.expiryDate ||
+    !driveConfig.scope ||
+    !driveConfig.tokenType ||
+    !driveConfig.idToken ||
+    !driveConfig.uploadFolderId ||
+    !driveConfig.uploadFolderName
+  ) {
+    throw new Error('Invalid drive config');
+  }
+
+  return driveConfig;
 }
 
-export async function getInstitutionConfig(institutionSlug: string) {
-  const institution = await prisma.institution.findUnique({
+export async function updateInstitutionConfig(
+  institutionSlug: string,
+  driveConfig: DriveConfig
+): Promise<void> {
+  const institution = await prisma.institution.findFirst({
     where: { slug: institutionSlug },
   });
 
   if (!institution) {
-    throw new Error(`Institution not found: ${institutionSlug}`);
+    throw new Error('Institution not found');
   }
 
-  return {
-    driveConfig: institution.driveConfig as DriveConfig,
-    name: institution.name,
-    id: institution.id,
-  };
-}
-
-export async function updateInstitutionConfig(
-  institutionId: number,
-  config: Partial<DriveConfig>
-) {
-  const institution = await prisma.institution.findUnique({
-    where: { id: institutionId },
-  });
-
-  if (!institution) {
-    throw new Error(`Institution not found: ${institutionId}`);
-  }
-
-  const updatedConfig = {
-    ...institution.driveConfig,
-    ...config,
-  };
-
-  return prisma.institution.update({
-    where: { id: institutionId },
+  await prisma.institution.update({
+    where: { id: institution.id },
     data: {
-      driveConfig: updatedConfig,
+      driveConfig: driveConfig as unknown as Prisma.InputJsonValue,
     },
   });
 }

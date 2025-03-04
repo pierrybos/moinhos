@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Container,
   TextField,
@@ -15,7 +15,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemIcon,
   CircularProgress,
   Backdrop,
   Checkbox,
@@ -25,7 +24,6 @@ import {
 } from "@mui/material";
 import Image from "next/image";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import MaskedInput from "react-text-mask";
 import CustomSnackbar from "../../components/CustomSnackbar";
 import { useSnackbar } from "../../components/useSnackbar";
 import { SelectChangeEvent } from "@mui/material";
@@ -38,7 +36,10 @@ interface InstitutionSettings {
   membershipText: string;
   imageRightsText: string;
   bibleVersions: string[];
-  driveConfig: any;
+  driveConfig: {
+    folderId: string;
+    accessToken: string;
+  };
 }
 
 const FormPage = () => {
@@ -50,127 +51,149 @@ const FormPage = () => {
   const [participationDate, setParticipationDate] = useState("");
   const [programPart, setProgramPart] = useState("");
   const [programParts, setProgramParts] = useState([]);
-  const [phone, setPhone] = useState("");
-  const [isWhatsApp, setIsWhatsApp] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
-  const [observations, setObservations] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imageRightsGranted, setImageRightsGranted] = useState(false);
-  const [isMember, setIsMember] = useState(false);
-  const [userPhoto, setUserPhoto] = useState<File | null>(null);
-  const [userPhotoPreview, setUserPhotoPreview] = useState<string | null>(null);
-  const [bibleVersion, setBibleVersion] = useState<string>("");
   const [performanceType, setPerformanceType] = useState("");
   const [microphoneCount, setMicrophoneCount] = useState<number>(1);
+  const [isMember, setIsMember] = useState(false);
+  const [imageRightsGranted, setImageRightsGranted] = useState(false);
+  const [userPhoto, setUserPhoto] = useState<File | null>(null);
+  const [userPhotoPreview, setUserPhotoPreview] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [institutionSettings, setInstitutionSettings] = useState<InstitutionSettings>({
     maxMicrophones: 1,
     membershipText: "Declaro que sou membro desta instituição",
     imageRightsText: "Autorizo o uso da minha imagem",
     bibleVersions: ["NVI", "ACF", "ARA"],
-    driveConfig: {},
+    driveConfig: {
+      folderId: "",
+      accessToken: "",
+    },
   });
   const extensionList = getAllExtensions().join(",");
 
   const { openSnackbar, snackbarProps } = useSnackbar();
+
+  const fetchInstitutionSettings = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/institutions/${institutionId}/settings`);
+      if (!response.ok) throw new Error("Failed to fetch institution settings");
+      const data = await response.json();
+      console.log("Received settings:", data);
+      setInstitutionSettings({
+        maxMicrophones: typeof data.maxMicrophones === "number" ? data.maxMicrophones : 5,
+        membershipText: data.membershipText || "Declaro que sou membro desta instituição",
+        imageRightsText: data.imageRightsText || "Autorizo o uso da minha imagem",
+        bibleVersions: data.bibleVersions || ["NVI", "ACF", "ARA"],
+        driveConfig: data.driveConfig || {
+          folderId: "",
+          accessToken: "",
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching institution settings:", error);
+      setInstitutionSettings({
+        maxMicrophones: 5,
+        membershipText: "Declaro que sou membro desta instituição",
+        imageRightsText: "Autorizo o uso da minha imagem",
+        bibleVersions: ["NVI", "ACF", "ARA"],
+        driveConfig: {
+          folderId: "",
+          accessToken: "",
+        },
+      });
+    }
+  }, [institutionId]);
+
+  const fetchProgramParts = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/institutions/${institutionId}/program-parts`);
+      if (!response.ok) throw new Error('Failed to fetch program parts');
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching program parts:', error);
+      openSnackbar('Error fetching program parts', 'error');
+      return [];
+    }
+  }, [institutionId, openSnackbar]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [parts, settings] = await Promise.all([
           fetchProgramParts(),
-          fetchInstitutionSettings(),
+          fetchInstitutionSettings()
         ]);
         console.log('Fetched Settings:', settings);
         setProgramParts(parts);
-        setInstitutionSettings(settings);
       } catch (error) {
-        console.error("Erro ao buscar dados iniciais:", error);
-        openSnackbar(
-          "Erro ao carregar dados. Por favor, tente novamente.",
-          "warning"
-        );
+        console.error('Erro ao buscar dados iniciais:', error);
+        openSnackbar('Erro ao carregar dados. Por favor, tente novamente.', 'warning');
       }
     };
 
     fetchData();
-  }, []);
+  }, [fetchInstitutionSettings, fetchProgramParts, openSnackbar]);
 
-  const isTokenExpired = () => {
-    const tokenExpiry = localStorage.getItem("tokenExpiry");
-    return !tokenExpiry || new Date().getTime() > parseInt(tokenExpiry);
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
-  const fetchNewToken = async () => {
     try {
-      const response = await fetch("/api/getAccessToken");
-      const data = await response.json();
+      const formData = new FormData();
+      formData.append('participantName', participantName);
+      formData.append('churchGroup', churchGroupState);
+      formData.append('participationDate', participationDate);
+      formData.append('programPart', programPart);
+      formData.append('performanceType', performanceType);
+      formData.append('microphoneCount', microphoneCount.toString());
+      formData.append('isMember', isMember.toString());
+      formData.append('imageRightsGranted', imageRightsGranted.toString());
 
-      if (data.accessToken) {
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem(
-          "tokenExpiry",
-          (new Date().getTime() + 3600 * 1000).toString()
-        );
-        return data.accessToken;
-      } else {
-        throw new Error("Failed to retrieve access token");
+      if (userPhoto) {
+        formData.append('userPhoto', userPhoto);
       }
+
+      files.forEach((file) => {
+        formData.append('files', file);
+      });
+
+      const response = await fetch(`/api/institutions/${institutionId}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload files');
+      }
+
+      setParticipantName('');
+      setChurchGroupState('');
+      setParticipationDate('');
+      setProgramPart('');
+      setPerformanceType('');
+      setMicrophoneCount(1);
+      setIsMember(false);
+      setImageRightsGranted(false);
+      setUserPhoto(null);
+      setUserPhotoPreview(null);
+      setFiles([]);
+      openSnackbar('Arquivos enviados com sucesso!', 'success');
     } catch (error) {
-      openSnackbar(
-        "Erro ao obter o token de acesso. Por favor, tente novamente.",
-        "warning"
-      );
+      console.error('Erro ao enviar arquivos:', error);
+      openSnackbar('Erro ao enviar arquivos. Por favor, tente novamente.', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const getValidAccessToken = async () => {
-    const accessToken = localStorage.getItem("accessToken");
-
-    if (!accessToken || isTokenExpired()) {
-      return await fetchNewToken();
-    }
-
-    return accessToken;
-  };
-
-  const fetchProgramParts = async () => {
-    const response = await fetch(
-      `/api/institutions/${institutionId}/program-parts`
-    );
-    const data = await response.json();
-    return data;
-  };
-
-  const fetchInstitutionSettings = async () => {
-    try {
-      const response = await fetch(
-        `/api/institutions/${institutionId}/settings`
-      );
-      if (!response.ok) throw new Error("Failed to fetch institution settings");
-      const data = await response.json();
-      console.log('Received settings:', data);
-      return {
-        maxMicrophones: typeof data.maxMicrophones === 'number' ? data.maxMicrophones : 5,
-        membershipText: data.membershipText || "Declaro que sou membro desta instituição",
-        imageRightsText: data.imageRightsText || "Autorizo o uso da minha imagem",
-        bibleVersions: data.bibleVersions || ["NVI", "ACF", "ARA"],
-        driveConfig: data.driveConfig || {},
-      };
-    } catch (error) {
-      console.error("Error fetching institution settings:", error);
-      return {
-        maxMicrophones: 5,
-        membershipText: "Declaro que sou membro desta instituição",
-        imageRightsText: "Autorizo o uso da minha imagem",
-        bibleVersions: ["NVI", "ACF", "ARA"],
-        driveConfig: {},
-      };
-    }
+  const handleRemoveFile = (index: number) => {
+    setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
   };
 
   const handlePerformanceTypeChange = (e: SelectChangeEvent<string>) => {
     const value = e.target.value as string;
-    console.log('Performance Type Changed:', value);
+    console.log("Performance Type Changed:", value);
     setPerformanceType(value);
 
     if (value === "Solo") {
@@ -179,10 +202,6 @@ const FormPage = () => {
       // Se não for solo, definir um valor inicial de microfones
       setMicrophoneCount(2);
     }
-  };
-
-  const handleImageRightsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setImageRightsGranted(e.target.checked);
   };
 
   const handleIsMemberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -226,132 +245,6 @@ const FormPage = () => {
       setPerformanceType("");
       setMicrophoneCount(1);
     }
-  };
-
-  const findFolder = async (name: string, parentId: string | undefined) => {
-    const accessToken = await getValidAccessToken();
-
-    const query = `name='${name}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`;
-    const response = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
-        query
-      )}&fields=files(id,name)`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    const data = await response.json();
-    return data.files[0]?.id;
-  };
-
-  const createFolder = async (name: string, parentId: string | undefined) => {
-    const accessToken = await getValidAccessToken();
-
-    const response = await fetch("https://www.googleapis.com/drive/v3/files", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name,
-        mimeType: "application/vnd.google-apps.folder",
-        parents: parentId ? [parentId] : undefined,
-      }),
-    });
-
-    const data = await response.json();
-    return data.id;
-  };
-
-  const getOrCreateFolder = async (name: string, parentId: string | undefined) => {
-    let folderId = await findFolder(name, parentId);
-    if (!folderId) {
-      folderId = await createFolder(name, parentId);
-    }
-    return folderId;
-  };
-
-  const uploadFile = async (file: File, folderId: string) => {
-    const accessToken = await getValidAccessToken();
-
-    const form = new FormData();
-    form.append("file", file);
-    form.append("participantName", participantName);
-    form.append("churchGroupState", churchGroupState);
-    form.append("participationDate", participationDate);
-    form.append("programPart", programPart);
-    form.append("phone", phone);
-    form.append("isWhatsApp", isWhatsApp.toString());
-    form.append("observations", observations);
-    form.append("imageRightsGranted", imageRightsGranted.toString());
-    form.append("isMember", isMember.toString());
-    form.append("performanceType", performanceType);
-    form.append("microphoneCount", microphoneCount.toString());
-    form.append("bibleVersion", bibleVersion);
-
-    const response = await fetch(`/api/institutions/${institutionId}/upload`, {
-      method: "POST",
-      body: form,
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to upload file");
-    }
-
-    return response.json();
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      if (!files.length) {
-        openSnackbar("Por favor, selecione pelo menos um arquivo", "warning");
-        return;
-      }
-
-      for (const file of files) {
-        await uploadFile(file, institutionId);
-      }
-
-      // Reset form
-      setParticipantName("");
-      setChurchGroupState("");
-      setParticipationDate("");
-      setProgramPart("");
-      setPhone("");
-      setIsWhatsApp(false);
-      setFiles([]);
-      setObservations("");
-      setImageRightsGranted(false);
-      setIsMember(false);
-      setUserPhoto(null);
-      setUserPhotoPreview(null);
-      setBibleVersion("");
-      setPerformanceType("");
-      setMicrophoneCount(1);
-
-      openSnackbar("Arquivos enviados com sucesso!", "success");
-    } catch (error) {
-      console.error("Erro ao enviar arquivos:", error);
-      openSnackbar(
-        "Erro ao enviar arquivos. Por favor, tente novamente.",
-        "error"
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleRemoveFile = (index: number) => {
-    setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
   };
 
   return (
@@ -443,67 +336,6 @@ const FormPage = () => {
           </FormHelperText>
         </FormControl>
 
-        <FormControl fullWidth margin="normal">
-          <InputLabel>Versão da Bíblia</InputLabel>
-          <Select
-            value={bibleVersion}
-            onChange={(e) => setBibleVersion(e.target.value)}
-            required={programPart === "Sermão"}
-            disabled={programPart !== "Sermão"}
-          >
-            {institutionSettings.bibleVersions.map((version) => (
-              <MenuItem key={version} value={version}>
-                {version}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <FormControl fullWidth margin="normal">
-          <MaskedInput
-            mask={[
-              "(",
-              /\d/,
-              /\d/,
-              ")",
-              " ",
-              /\d/,
-              /\d/,
-              /\d/,
-              /\d/,
-              /\d/,
-              "-",
-              /\d/,
-              /\d/,
-              /\d/,
-              /\d/,
-            ]}
-            guide={false}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            render={(ref, props) => (
-              <TextField
-                {...props}
-                inputRef={ref}
-                label="Telefone"
-                required
-                fullWidth
-              />
-            )}
-          />
-        </FormControl>
-
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={isWhatsApp}
-              onChange={(e) => setIsWhatsApp(e.target.checked)}
-            />
-          }
-          label="Este número é WhatsApp"
-          sx={{ mt: 1 }}
-        />
-
         <Box sx={{ mt: 3 }}>
           <input
             type="file"
@@ -584,16 +416,6 @@ const FormPage = () => {
             ))}
           </List>
         </Box>
-
-        <TextField
-          fullWidth
-          label="Observações"
-          multiline
-          rows={4}
-          value={observations}
-          onChange={(e) => setObservations(e.target.value)}
-          margin="normal"
-        />
 
         <Box sx={{ mt: 3 }}>
           <FormControlLabel

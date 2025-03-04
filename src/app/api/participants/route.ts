@@ -39,43 +39,67 @@ export async function GET() {
 // Handler para criar um novo participante (POST)
 export async function POST(req: Request) {
   try {
-    const data = await req.json();
-    const allowedExtensions = getAllExtensions();
+    const formData = await req.formData();
+    const participantName = formData.get('participantName');
+    const churchGroupState = formData.get('churchGroupState');
+    const participationDate = formData.get('participationDate');
+    const programPart = formData.get('programPart');
+    const phone = formData.get('phone');
+    const isWhatsApp = formData.get('isWhatsApp') === 'true';
+    const observations = formData.get('observations');
+    const files = formData.getAll('files') as File[];
+    const imageRightsGranted = formData.get('imageRightsGranted') === 'true';
+    const isMember = formData.get('isMember') === 'true';
+    const performanceType = formData.get('performanceType');
+    const microphoneCount = parseInt(formData.get('microphoneCount') as string);
+    const userPhoto = formData.get('userPhoto');
+    const bibleVersion = formData.get('bibleVersion');
+    const institutionSlug = formData.get('institutionSlug');
 
-    const {
-      participantName,
-      churchGroupState,
-      participationDate,
-      programPart,
-      phone,
-      isWhatsApp,
-      observations,
-      files,
-      imageRightsGranted,
-      isMember,
-      performanceType,
-      microphoneCount,
-      userPhoto,
-      bibleVersion,
-    } = data;
+    // Validar campos obrigatórios
+    if (!participantName || !churchGroupState || !participationDate || !programPart || !institutionSlug) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Buscar a instituição
+    const institution = await prisma.institution.findFirst({
+      where: {
+        slug: institutionSlug as string,
+      },
+    });
+
+    if (!institution) {
+      return NextResponse.json(
+        { error: 'Institution not found' },
+        { status: 404 }
+      );
+    }
 
     // Salvar o participante no banco de dados com status "Pendente"
     const participant = await prisma.participant.create({
       data: {
-        name: participantName,
-        group: churchGroupState,
-        participationDate: new Date(participationDate),
-        programPart,
-        phone,
+        name: participantName as string,
+        group: churchGroupState as string,
+        participationDate: new Date(participationDate as string),
+        programPart: programPart as string,
+        phone: phone as string,
         isWhatsApp,
-        observations,
+        observations: observations as string,
         status: "Pendente",
         isMember,
         imageRightsGranted: imageRightsGranted || isMember,
-        performanceType,
+        performanceType: performanceType as string,
         microphoneCount,
-        userPhoto,
-        bibleVersion,
+        userPhoto: userPhoto as string,
+        bibleVersion: bibleVersion as string,
+        institution: {
+          connect: {
+            id: institution.id,
+          },
+        },
       },
     });
 
@@ -84,7 +108,7 @@ export async function POST(req: Request) {
       const fileExtension = file.name
         .slice(file.name.lastIndexOf("."))
         .toLowerCase();
-      if (!allowedExtensions.includes(fileExtension)) {
+      if (!getAllExtensions().includes(fileExtension)) {
         return NextResponse.json(
           { error: `Arquivo com extensão ${fileExtension} não é permitido.` },
           { status: 400 }
@@ -93,8 +117,9 @@ export async function POST(req: Request) {
       await prisma.file.create({
         data: {
           filename: file.name,
-          driveLink: file.link,
+          driveLink: '',
           participantId: participant.id,
+          institutionId: institution.id,
         },
       });
     }

@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { prisma } from '@/lib/prisma';
 import { Readable } from 'stream';
+import { drive_v3 } from 'googleapis/build/src/apis/drive/v3';
 
-async function findOrCreateFolder(drive: any, name: string, parentId: string, shouldFind: boolean = true) {
+async function findOrCreateFolder(drive: drive_v3.Drive, name: string, parentId: string, shouldFind = true): Promise<string> {
   try {
     if (shouldFind) {
-      // Procura pasta existente
       const response = await drive.files.list({
         q: `name='${name}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`,
         fields: 'files(id, name)',
@@ -14,53 +14,64 @@ async function findOrCreateFolder(drive: any, name: string, parentId: string, sh
         includeItemsFromAllDrives: true,
       });
 
-      if (response.data.files.length > 0) {
-        return response.data.files[0].id;
+      const files = response.data.files;
+      if (files?.[0]?.id) {
+        return files[0].id;
       }
     }
 
-    // Cria nova pasta
-    const folderMetadata = {
-      name: name,
-      mimeType: 'application/vnd.google-apps.folder',
-      parents: [parentId],
-      driveId: parentId,
-    };
-
     const folder = await drive.files.create({
-      requestBody: folderMetadata,
+      requestBody: {
+        name,
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: [parentId],
+      },
       fields: 'id',
       supportsAllDrives: true,
+      supportsTeamDrives: true,
     });
+
+    if (!folder.data.id) {
+      throw new Error('Failed to create folder in Google Drive');
+    }
 
     return folder.data.id;
   } catch (error) {
-    console.error('Error in findOrCreateFolder:', error);
-    throw error;
+    throw new Error(`Failed to find or create folder: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
-async function uploadFileToDrive(drive: any, file: File, folderId: string, description: string, driveId: string) {
-  // Convert File to Buffer
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const stream = Readable.from(buffer);
+async function uploadFileToDrive(
+  drive: drive_v3.Drive,
+  file: File,
+  folderId: string,
+  description: string
+): Promise<string> {
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const stream = Readable.from(buffer);
 
-  // Upload to Google Drive na pasta correta
-  const response = await drive.files.create({
-    requestBody: {
-      name: file.name,
-      description: description,
-      parents: [folderId],
-      driveId: driveId,
+    const response = await drive.files.create({
+      requestBody: {
+        name: file.name,
+        description,
+        parents: [folderId],
+      },
+      media: {
+        body: stream,
+      },
       supportsAllDrives: true,
-    },
-    media: {
-      body: stream,
-    },
-    supportsAllDrives: true,
-  });
+      supportsTeamDrives: true,
+    });
 
-  return response.data.id;
+    if (!response.data.id) {
+      throw new Error('Failed to upload file to Google Drive');
+    }
+
+    return response.data.id;
+  } catch (error) {
+    throw new Error(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 export async function POST(
@@ -68,7 +79,6 @@ export async function POST(
   { params }: { params: { institutionId: string } }
 ) {
   try {
-    // Get institution
     const institution = await prisma.institution.findUnique({
       where: { slug: params.institutionId },
     });
@@ -86,7 +96,13 @@ export async function POST(
       sharedDriveId: string;
     };
 
-    // Set up Google Drive client with service account
+    if (!driveConfig?.serviceAccountKey || !driveConfig?.serviceAccountEmail || !driveConfig?.sharedDriveId) {
+      return NextResponse.json(
+        { error: 'Drive configuration is incomplete' },
+        { status: 400 }
+      );
+    }
+
     const auth = new google.auth.GoogleAuth({
       credentials: JSON.parse(driveConfig.serviceAccountKey),
       scopes: ['https://www.googleapis.com/auth/drive'],
@@ -94,12 +110,9 @@ export async function POST(
 
     const drive = google.drive({ version: 'v3', auth });
 
-    // Parse form data
     const formData = await request.formData();
     const files = formData.getAll('file') as File[];
     const userPhoto = formData.get('userPhoto') as File;
-    
-    // Get other form fields
     const participantName = formData.get('participantName') as string;
     const churchGroupState = formData.get('churchGroupState') as string;
     const participationDate = formData.get('participationDate') as string;
@@ -120,18 +133,21 @@ export async function POST(
       );
     }
 
-    // Convertendo a string da data para o formato correto considerando o timezone local
+    if (!participantName || !churchGroupState || !participationDate || !programPart || !phone || !isWhatsApp || !observations || !imageRightsGranted || !isMember || !performanceType || !microphoneCount || !bibleVersion) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
     const [year, month, day] = participationDate.split('-');
 
-    // Obter hora atual para o nome da pasta
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, '0');
     const minutes = now.getMinutes().toString().padStart(2, '0');
     
-    // Nome da pasta do programa com horário
     const programFolderName = `${programPart} ${hours}:${minutes}`;
 
-    // Create description with all form data
     const description = `
 Participante: ${participantName}
 Grupo/Igreja: ${churchGroupState}
@@ -147,38 +163,48 @@ Direitos de Imagem: ${imageRightsGranted === 'true' ? 'Sim' : 'Não'}
 Observações: ${observations}
     `.trim();
 
-    // Criar estrutura de diretórios
     let currentFolderId = driveConfig.sharedDriveId;
     
-    // Criar ou encontrar pasta do ano
     currentFolderId = await findOrCreateFolder(drive, year, currentFolderId);
     
-    // Criar ou encontrar pasta do mês
     currentFolderId = await findOrCreateFolder(drive, month, currentFolderId);
     
-    // Criar ou encontrar pasta do dia
     currentFolderId = await findOrCreateFolder(drive, day, currentFolderId);
     
-    // Criar nova pasta da parte do programa (sempre cria uma nova)
     const programFolderId = await findOrCreateFolder(drive, programFolderName, currentFolderId, false);
+
+    if (!programFolderId) {
+      return NextResponse.json(
+        { error: 'Failed to create folder' },
+        { status: 500 }
+      );
+    }
 
     const uploadedFiles = [];
 
-    // Upload da foto do usuário se existir
     if (userPhoto) {
-      // Criar pasta de fotos
       const photosFolderId = await findOrCreateFolder(drive, 'fotos', programFolderId);
-      const photoId = await uploadFileToDrive(drive, userPhoto, photosFolderId, description, driveConfig.sharedDriveId);
+      if (!photosFolderId) {
+        return NextResponse.json(
+          { error: 'Failed to create folder' },
+          { status: 500 }
+        );
+      }
+      const photoId = await uploadFileToDrive(drive, userPhoto, photosFolderId, description);
       uploadedFiles.push({ type: 'photo', id: photoId });
     }
 
-    // Upload dos outros arquivos
     if (files.length > 0) {
-      // Criar pasta de arquivos
       const filesFolderId = await findOrCreateFolder(drive, 'arquivos', programFolderId);
+      if (!filesFolderId) {
+        return NextResponse.json(
+          { error: 'Failed to create folder' },
+          { status: 500 }
+        );
+      }
       
       for (const file of files) {
-        const fileId = await uploadFileToDrive(drive, file, filesFolderId, description, driveConfig.sharedDriveId);
+        const fileId = await uploadFileToDrive(drive, file, filesFolderId, description);
         uploadedFiles.push({ type: 'file', id: fileId });
       }
     }
@@ -188,9 +214,8 @@ Observações: ${observations}
       files: uploadedFiles,
     });
   } catch (error) {
-    console.error('Error uploading file:', error);
     return NextResponse.json(
-      { error: 'Error uploading file' },
+      { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     );
   }
